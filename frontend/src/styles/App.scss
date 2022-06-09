@@ -1,0 +1,80 @@
+@font-face {
+    font-family: 'Roboto';
+    src: url(../fonts/Roboto/Roboto-Light.ttf);
+}
+
+body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+}
+
+h2 {
+    margin: 0;
+    font-size: 2rem;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+// defaults here
+.App {
+    font-family: 'Roboto';
+    width: 100vw;
+    height: 100vh;
+}
+
+.LogIn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+
+    .MuiPaper-root {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        border-radius: 10px;
+        width: min(80vw, 800px);
+        height: min(60vh, 800px);
+        box-sizing: border-box;
+        padding: min(3rem, 10%);
+    }
+}
+
+.SignUp {
+    .MuiPaper-root {
+        .form {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            align-items: center;
+
+            .MuiFormControl-root {
+                margin-bottom: max(10px, 2vh);
+                width: max(30%, 200px);
+            }
+
+            .MuiButtonBase-root {
+                
+            }
+
+            .address {
+                
+            }
+        }
+    }
+}
+
+.NotFound {
+    box-sizing: border-box;
+    padding-top: min(50px, 10%);
+    width: 100%;
+    height: 100%;
+    font-size: 2rem;
+    text-align: center;
+}
