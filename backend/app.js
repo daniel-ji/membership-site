@@ -4,14 +4,19 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 const cors = require('cors');
 
+const connectDB = require('./config/mongoDB');
+
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 
 var app = express();
 
 const corsOptions = {
-    origin: '*',
+    origin: 'http://localhost:3000',
+    credentials: true
 };
+
+
 app.use(cors(corsOptions));
 app.use(logger('dev'));
 app.use(express.json());

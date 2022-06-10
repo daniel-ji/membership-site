@@ -4,12 +4,18 @@
  * Module dependencies.
  */
 
+require('dotenv').config();
 var app = require('../app');
 var debug = require('debug')('backend:server');
 var http = require('http');
-var dotenv = require('dotenv');
 
-dotenv.config();
+/**
+ * Connect to MongoDB.
+ */
+
+const connectDB = require('../config/mongoDB');
+const { default: mongoose } = require('mongoose');
+connectDB();
 
 /**
  * Get port from environment and store in Express.
@@ -28,7 +34,10 @@ var server = http.createServer(app);
  * Listen on provided port, on all network interfaces.
  */
 
-server.listen(port);
+mongoose.connection.once('open', () => {
+  console.log('Connected to MongoDB');
+  server.listen(port);
+})
 server.on('error', onError);
 server.on('listening', onListening);
 
