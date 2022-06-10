@@ -18,6 +18,10 @@ const customerSchema = new Schema({
         type: String,
         required: true
     }, 
+    birthday: {
+        type: String,
+        required: true
+    },
     active: {
         type: Boolean,
         default: false,
