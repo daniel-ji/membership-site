@@ -1,5 +1,5 @@
-var express = require('express');
-var router = express.Router();
+const express = require('express');
+const router = express.Router();
 
 const bcrypt = require('bcrypt');
 
@@ -61,5 +61,24 @@ router.delete('/delete', (req, res, next) => {
         res.sendStatus(500);
     });
 });
+
+/* POST login request */
+router.post('/login', async (req, res, next) => {
+    try {
+        const customer = await Customer.findOne({email: req.body.email}).exec();
+        if (customer !== null) {
+            if (await bcrypt.compare(req.body.password, customer.password)) {
+                res.status(200).json({'success': 'Logged in.'})
+            } else {
+                res.status(401).json({'error': 'Invalid password.'})
+            }
+        } else {
+            res.status(401).json({'error': 'Invalid email.'})
+        }
+    } catch (err) {
+        console.log(err);
+        res.sendStatus(500);
+    }
+})
 
 module.exports = router;

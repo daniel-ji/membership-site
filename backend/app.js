@@ -1,16 +1,16 @@
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
 
 const cors = require('cors');
 
 const connectDB = require('./config/mongoDB');
 
-var indexRouter = require('./routes/index');
-var customersRouter = require('./routes/customer');
+const indexRouter = require('./routes/index');
+const customersRouter = require('./routes/customer');
 
-var app = express();
+const app = express();
 
 const corsOptions = {
     origin: 'http://localhost:3000',
@@ -26,6 +26,6 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
-app.use('/customers', customersRouter);
+app.use('/api/customers', customersRouter);
 
 module.exports = app;
