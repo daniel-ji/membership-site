@@ -18,21 +18,13 @@ export class SignUp extends Component {
         super(props)
     
         this.state = {
-            // name: '',
-            // phone: '',
-            // email: '',
-            // address: '',
-            // birthday: new Date('1 Jan 2000'),
-            // password: '',
-            // reenter: '',
-
-            name: 'Daniel',
-            phone: '6263211448',
-            email: 'jidaniel1234@gmail.com',
-            address: '409 Mockingbird Ln, Walnut, CA 91789',
+            name: '',
+            phone: '',
+            email: '',
+            address: '',
             birthday: new Date('1 Jan 2000'),
-            password: 'Password1234',
-            reenter: 'Password1234',
+            password: '',
+            reenter: '',
 
             nameValid: true,
             phoneValid: true,
@@ -88,7 +80,7 @@ export class SignUp extends Component {
         }, () => {
             if (this.state.nameValid && this.state.phoneValid && this.state.emailValid && this.state.addressValid 
                 && this.state.birthdayValid && this.state.passwordValid && this.state.reenterValid) {
-                    axios.post('http://localhost:8000/users/signup', {
+                    axios.post('http://localhost:8000/customers/signup', {
                         name: this.state.name,
                         phone: this.state.phone,
                         email: this.state.email,
