@@ -3,7 +3,7 @@ import { Paper, TextField, Button } from '@mui/material';
 import { Helmet } from 'react-helmet'
 import { Link } from 'react-router-dom'
 
-import DatePickerFix from './DatePickerFix';
+import { KeyboardDatePicker } from "@material-ui/pickers";
 
 const axios = require('axios');
 
@@ -22,7 +22,7 @@ export class SignUp extends Component {
             // phone: '',
             // email: '',
             // address: '',
-            // birthday: new Date(Date.now()-20*365*24*60*60*1000),
+            // birthday: new Date('1 Jan 2000'),
             // password: '',
             // reenter: '',
 
@@ -30,7 +30,7 @@ export class SignUp extends Component {
             phone: '6263211448',
             email: 'jidaniel1234@gmail.com',
             address: '409 Mockingbird Ln, Walnut, CA 91789',
-            birthday: new Date(Date.now()-20*365*24*60*60*1000),
+            birthday: new Date('1 Jan 2000'),
             password: 'Password1234',
             reenter: 'Password1234',
 
@@ -42,7 +42,10 @@ export class SignUp extends Component {
             passwordValid: true,
             reenterValid: true,
 
-            whitelist: ['reenter', 'birthday', 'address']
+            whitelist: ['reenter', 'birthday', 'address'],
+
+            status: undefined,
+            isStatusError: false,
         }
 
         this.updateValue = this.updateValue.bind(this);
@@ -90,12 +93,19 @@ export class SignUp extends Component {
                         phone: this.state.phone,
                         email: this.state.email,
                         address: this.state.address,
-                        birthday: new Date(this.state.birthday).toString(),
+                        birthday: new Date(this.state.birthday).toDateString(),
                         password: this.state.password,
                     }).then((res) =>  {
-                        console.log(res);
+                        if (res.status === 201) {
+                            this.setState({status: 'Successfully registered! Please check your email to verify your account.', isStatusError: false})
+                        }
                     }).catch((err) => {
-                        console.log(err);
+                        console.log(err); 
+                        if (err.response.status === 409) {
+                            this.setState({status: 'Account already exists.', isStatusError: true})
+                        } else {
+                            this.setState({status: 'Error creating account, please try again later.', isStatusError: true})
+                        }
                     })
             }
         });
@@ -114,12 +124,27 @@ export class SignUp extends Component {
                         <TextField error={!this.state.phoneValid} value={this.state.phone} onChange={(e) => this.updateValue(e, 'phone')} label='Phone' type='tel' />
                         <TextField error={!this.state.emailValid} value={this.state.email} onChange={(e) => this.updateValue(e, 'email')} label='Email' type='email'/>
                         <TextField error={!this.state.addressValid} value={this.state.address} onChange={(e) => this.updateValue(e, 'address')} className='address' label='Full Address' />
-                        <DatePickerFix error={!this.state.birthdayValid} value={new Date(this.state.birthday)} onChange={(date) => this.updateBirthday(date)}/> 
+                        <KeyboardDatePicker
+                            className="birthday"
+                            error={!this.state.birthdayValid}
+                            autoOk
+                            variant="inline"
+                            inputVariant="outlined"
+                            label="Select Date"
+                            format="MM/DD/yyyy"
+                            minDate={new Date('1 Jan 1900')}
+                            maxDate={new Date(Date.now()-13*365*24*60*60*1000)}
+                            allowKeyboardControl
+                            value={this.state.birthday}
+                            onChange={(date) => this.updateBirthday(date)}
+                            openTo="year"
+                        />
                         <TextField error={!this.state.passwordValid} value={this.state.password} onChange={(e) => this.updateValue(e, 'password')} label='Create Password' type='password'/>
                         <TextField error={!this.state.reenterValid} value={this.state.reenter} onChange={(e) => this.updateValue(e, 'reenter')} label='Re-Enter Password' type='password' />
                     </div>
                     <Button variant='outlined' onClick={this.signUp}>Sign Up</Button>
                     <Button variant='outlined'><Link to='/login'>Log In</Link></Button>
+                    {this.state.status !== undefined && <p style={{color: this.state.isStatusError ? 'red' : 'green'}}>{this.state.status}</p>}
                 </Paper>
             </div>
         )

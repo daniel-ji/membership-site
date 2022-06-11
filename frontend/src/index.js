@@ -4,6 +4,8 @@ import App from './App';
 
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 
+import { MuiPickersUtilsProvider } from '@material-ui/pickers';
+import MomentUtils from '@date-io/moment';
 
 const theme = createTheme({
     typography: {
@@ -15,7 +17,9 @@ const theme = createTheme({
 ReactDOM.render(
     <React.StrictMode>
         <ThemeProvider theme={theme}>
-            <App />
+            <MuiPickersUtilsProvider utils={MomentUtils}>
+                <App />
+            </MuiPickersUtilsProvider>
         </ThemeProvider>
     </React.StrictMode>,
     document.getElementById('root')
