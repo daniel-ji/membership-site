@@ -56,7 +56,7 @@ passport.deserializeUser((id, done) => {
     })
 })
 
-passport.use(new LocalStrategy(verify))
+passport.use(new LocalStrategy({usernameField: 'email'}, verify))
 
 // Routes
 app.use('/', indexRouter);

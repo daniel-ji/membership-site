@@ -18,8 +18,6 @@ router.get('/', (req, res, next) => {
 /* PATCH (update) customer */
 router.patch('/', (req, res, next) => {
     Customer.updateMany(req.body.filter, {$set: req.body.update}).exec().then(result => {
-        console.log(req);
-        console.log(result);
         res.status(200).json({'success': `Updated ${result.modifiedCount} user(s).`})
     })
 })
@@ -64,7 +62,7 @@ router.delete('/delete', (req, res, next) => {
 });
 
 /* POST login request */
-router.post('/login', async (req, res, next) => {
+router.post('/login', passport.authenticate('local', {successRedirect: '/', failureRedirect: '/login'}), async (req, res, next) => {
     try {
         const customer = await Customer.findOne({email: req.body.email}).exec();
         if (customer !== null) {
