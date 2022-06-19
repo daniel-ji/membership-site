@@ -8,6 +8,8 @@ const connectDB = async() => {
         })
     } catch {
         console.error(err);
+    } finally {
+        console.log(mongoose.connection.readyState === 1 ? 'Connected to MongoDB' : 'Error connecting to MongoDB')
     }
 }
 

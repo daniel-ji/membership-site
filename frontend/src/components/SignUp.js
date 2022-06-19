@@ -80,7 +80,7 @@ export class SignUp extends Component {
         }, () => {
             if (this.state.nameValid && this.state.phoneValid && this.state.emailValid && this.state.addressValid 
                 && this.state.birthdayValid && this.state.passwordValid && this.state.reenterValid) {
-                    axios.post('http://localhost:8000/api/customers/signup', {
+                    axios.post('/api/customers/signup', {
                         name: this.state.name,
                         phone: this.state.phone,
                         email: this.state.email,

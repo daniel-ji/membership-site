@@ -2,8 +2,9 @@ const express = require('express');
 const router = express.Router();
 
 const bcrypt = require('bcrypt');
+const passport = require('passport');
 
-const Customer = require('../dbmodels/Customer');
+const Customer = require('../models/Customer');
 
 /* GET customers */
 router.get('/', (req, res, next) => {
@@ -41,7 +42,7 @@ router.post('/signup', async (req, res, next) => {
             password: hashedPw
         })
 
-        res.status(201).json({'success': 'User created'});
+        res.status(201).json({'success': 'User created.'});
     } catch (err) {
         console.log(err);
         res.sendStatus(500);
