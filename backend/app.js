@@ -9,10 +9,12 @@ const cors = require('cors');
 const helmet = require('helmet');
 require('dotenv').config();
 
-const verify = require('./config/authstrategy'); 
+const passportFunctions = require('./config/passportFunctions'); 
 
 const indexRouter = require('./routes/index');
 const customersRouter = require('./routes/customer');
+
+const Customer = require('./models/Customer');
 
 const app = express();
 
@@ -50,13 +52,9 @@ passport.serializeUser((user, done) => {
     done(null, user.id);
 })
 
-passport.deserializeUser((id, done) => {
-    Customer.findById(id, (err, user) => {
-        done(err, user);
-    })
-})
+passport.deserializeUser(passportFunctions.deserializeCustomer)
 
-passport.use(new LocalStrategy({usernameField: 'email'}, verify))
+passport.use(new LocalStrategy({usernameField: 'email'}, passportFunctions.verify))
 
 // Routes
 app.use('/', indexRouter);

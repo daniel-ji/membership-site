@@ -13,4 +13,15 @@ const verify = (email, password, done) => {
     })
 }
 
-module.exports = verify;
+const isAuthenticated = (req, res, next) => {
+    if (req.isAuthenticated()) return next();
+    res.sendStatus(401);
+}
+
+const deserializeCustomer = (id, done) => {
+    Customer.findById(id, (err, user) => {
+        done(err, user);
+    })
+}
+
+module.exports = {verify, isAuthenticated, deserializeCustomer};
