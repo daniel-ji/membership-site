@@ -24,4 +24,14 @@ const deserializeCustomer = (id, done) => {
     })
 }
 
-module.exports = {verify, isAuthenticated, deserializeCustomer};
+const isObjectStrict = (...values) => {
+    let result = true;
+    values.forEach(value => {
+        if (typeof value !== 'object' || Array.isArray(value) || value === null) {
+            result = false;
+        }
+    })
+    return result;
+}
+
+module.exports = {verify, isAuthenticated, deserializeCustomer, isObjectStrict};

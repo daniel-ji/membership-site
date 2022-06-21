@@ -3,16 +3,19 @@ const router = express.Router();
 
 const bcrypt = require('bcrypt');
 const passport = require('passport');
+
 const mongoose = require('mongoose'); 
+const validator = require('validator');
 const dotenv = require('dotenv');
+
 dotenv.config();
 
-const passportFunctions = require('../config/passportFunctions');
+const authFunctions = require('../config/authFunctions');
 
 const Customer = require('../models/users/Customer');
 
 /* GET own customer information (if currently logged in as a customer) */
-router.get('/self', passportFunctions.isAuthenticated, (req, res, next) => {
+router.get('/self', authFunctions.isAuthenticated, (req, res, next) => {
     Customer.find({"_id": req.user._id.toString()}).exec().then(result => {
         res.status(200).json(result);
     }).catch(err => {
@@ -22,8 +25,8 @@ router.get('/self', passportFunctions.isAuthenticated, (req, res, next) => {
 })
 
 /* GET customer based on Object Id */
-router.get('/one/:id', passportFunctions.isAuthenticated, (req, res, next) => {
-    if (mongoose.Types.ObjectId.isValid(req.params.id)) {        
+router.get('/one/:id', authFunctions.isAuthenticated, (req, res, next) => {
+    if (validator.isMongoId(req.params.id)) {        
         Customer.findOne({"_id": mongoose.Types.ObjectId(req.params.id)}).exec().then(result => {
             res.status(200).json(result);
         }).catch(err => {
@@ -36,7 +39,7 @@ router.get('/one/:id', passportFunctions.isAuthenticated, (req, res, next) => {
 }) 
 
 /* GET all customers */
-router.get('/all', passportFunctions.isAuthenticated, (req, res, next) => {
+router.get('/all', authFunctions.isAuthenticated, (req, res, next) => {
     Customer.find({}).exec().then(result => {
         res.status(200).json(result);
     }).catch(err => {
@@ -46,17 +49,21 @@ router.get('/all', passportFunctions.isAuthenticated, (req, res, next) => {
 })
 
 /* PATCH (update) customer */
-router.patch('/', passportFunctions.isAuthenticated, (req, res, next) => {
-    Customer.updateMany(req.body.filter, {$set: req.body.update}).exec().then(result => {
-        if (result.modifiedCount === 0) {
-            res.status(200).json({'info': `Updated 0 users.`})
-        } else {
-            res.status(200).json({'success': `Updated ${result.modifiedCount} user(s).`})
-        }
-    }).catch(err => {
-        console.log(err);
-        res.sendStatus(500);
-    })
+router.patch('/', authFunctions.isAuthenticated, (req, res, next) => {
+    if (authFunctions.isObjectStrict(req.body.filter, req.body.update)) {
+        Customer.updateMany(req.body.filter, {$set: req.body.update}).exec().then(result => {
+            if (result.modifiedCount === 0) {
+                res.status(200).json({'info': `Updated 0 users.`})
+            } else {
+                res.status(200).json({'success': `Updated ${result.modifiedCount} user(s).`})
+            }
+        }).catch(err => {
+            console.log(err);
+            res.sendStatus(500);
+        })
+    } else {
+        res.sendStatus(400);
+    }
 })
 
 /* POST new customer */
@@ -86,17 +93,21 @@ router.post('/signup', async (req, res, next) => {
 });
 
 /* DELETE customers */
-router.delete('/delete', (req, res, next) => {
-    Customer.deleteMany(req.body.filter).exec().then(result => {
-        if (result.deletedCount === 0) {
-            res.status(202).json({'info': 'No users deleted.'})
-        } else {
-            res.status(200).json({'success': `Deleted ${result.deletedCount} user(s).`});
-        }
-    }).catch(err => {
-        console.log(err);
-        res.sendStatus(500);
-    });
+router.delete('/delete', authFunctions.isAuthenticated, (req, res, next) => {
+    if (authFunctions.isObjectStrict(req.body.filter)) {
+        Customer.deleteMany(req.body.filter).exec().then(result => {
+            if (result.deletedCount === 0) {
+                res.status(202).json({'info': 'No users deleted.'})
+            } else {
+                res.status(200).json({'success': `Deleted ${result.deletedCount} user(s).`});
+            }
+        }).catch(err => {
+            console.log(err);
+            res.sendStatus(500);
+        });
+    } else {
+        res.sendStatus(400);
+    }
 });
 
 /* POST login request */

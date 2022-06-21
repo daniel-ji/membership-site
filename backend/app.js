@@ -1,15 +1,23 @@
 const express = require('express');
 const session = require('express-session');
+
+// passport
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
+
+// defaults
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
-const cors = require('cors');
+
+// protection
 const helmet = require('helmet');
+const cors = require('cors');
+const mongoSanitize = require('express-mongo-sanitize');
+
 require('dotenv').config();
 
-const passportFunctions = require('./config/passportFunctions'); 
+const authFunctions = require('./config/authFunctions'); 
 
 const indexRouter = require('./routes/index');
 const customersRouter = require('./routes/customer');
@@ -30,6 +38,9 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
+// Express-Mongo-Sanitize
+app.use(mongoSanitize());
+
 // Express-Session
 app.use(session({
     secret: process.env.SESSION_SECRET,
@@ -41,9 +52,18 @@ app.use(session({
 }))
 
 // Default Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
 app.use(logger('dev'));
+
+app.use(express.json());
+app.use((err, req, res, next) => {
+    if (err) {
+        res.sendStatus(400)
+    } else {
+        next();
+    }
+})
+// app.use(express.urlencoded({ extended: false }));
+
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -55,9 +75,9 @@ passport.serializeUser((user, done) => {
     done(null, user.id);
 })
 
-passport.deserializeUser(passportFunctions.deserializeCustomer)
+passport.deserializeUser(authFunctions.deserializeCustomer)
 
-passport.use(new LocalStrategy(passportFunctions.verify))
+passport.use(new LocalStrategy(authFunctions.verify))
 
 // Routes
 app.use('/', indexRouter);
