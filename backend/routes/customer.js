@@ -4,13 +4,25 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const passport = require('passport');
 const mongoose = require('mongoose'); 
+const dotenv = require('dotenv');
+dotenv.config();
 
 const passportFunctions = require('../config/passportFunctions');
 
-const Customer = require('../models/Customer');
+const Customer = require('../models/users/Customer');
+
+/* GET own customer information (if currently logged in as a customer) */
+router.get('/self', passportFunctions.isAuthenticated, (req, res, next) => {
+    Customer.find({"_id": req.user._id.toString()}).exec().then(result => {
+        res.status(200).json(result);
+    }).catch(err => {
+        console.log(err);
+        res.sendStatus(500);
+    })
+})
 
 /* GET customer based on Object Id */
-router.get('/:id', passportFunctions.isAuthenticated, (req, res, next) => {
+router.get('/one/:id', passportFunctions.isAuthenticated, (req, res, next) => {
     if (mongoose.Types.ObjectId.isValid(req.params.id)) {        
         Customer.findOne({"_id": mongoose.Types.ObjectId(req.params.id)}).exec().then(result => {
             res.status(200).json(result);
@@ -24,7 +36,7 @@ router.get('/:id', passportFunctions.isAuthenticated, (req, res, next) => {
 }) 
 
 /* GET all customers */
-router.get('/', passportFunctions.isAuthenticated, (req, res, next) => {
+router.get('/all', passportFunctions.isAuthenticated, (req, res, next) => {
     Customer.find({}).exec().then(result => {
         res.status(200).json(result);
     }).catch(err => {
@@ -36,7 +48,11 @@ router.get('/', passportFunctions.isAuthenticated, (req, res, next) => {
 /* PATCH (update) customer */
 router.patch('/', passportFunctions.isAuthenticated, (req, res, next) => {
     Customer.updateMany(req.body.filter, {$set: req.body.update}).exec().then(result => {
-        res.status(200).json({'success': `Updated ${result.modifiedCount} user(s).`})
+        if (result.modifiedCount === 0) {
+            res.status(200).json({'info': `Updated 0 users.`})
+        } else {
+            res.status(200).json({'success': `Updated ${result.modifiedCount} user(s).`})
+        }
     }).catch(err => {
         console.log(err);
         res.sendStatus(500);
@@ -48,7 +64,7 @@ router.post('/signup', async (req, res, next) => {
     try {
         const hashedPw = await bcrypt.hash(req.body.password, 10);
 
-        if (await Customer.findOne({email: req.body.email}).exec()) {
+        if (await Customer.findOne({username: req.body.email}).exec()) {
             return res.status(409).json({'error': 'Email already exists'});
         }
 
@@ -56,6 +72,7 @@ router.post('/signup', async (req, res, next) => {
             name: req.body.name,
             phone: req.body.phone,
             email: req.body.email,
+            username: req.body.email,
             address: req.body.address,
             birthday: req.body.birthday,
             password: hashedPw
@@ -69,7 +86,7 @@ router.post('/signup', async (req, res, next) => {
 });
 
 /* DELETE customers */
-router.delete('/delete', passportFunctions.isAuthenticated, (req, res, next) => {
+router.delete('/delete', (req, res, next) => {
     Customer.deleteMany(req.body.filter).exec().then(result => {
         if (result.deletedCount === 0) {
             res.status(202).json({'info': 'No users deleted.'})
@@ -95,7 +112,11 @@ router.post('/login', passport.authenticate('local', {successMessage: 'Logged in
 router.post('/logout', (req, res, next) => {
     req.logout(err => {
         if (err) return next(err);
-        res.redirect('/');
+        if (process.env.NODE_ENV === "DEVELOPMENT") {
+            res.sendStatus(200);
+        } else {
+            res.redirect('/');
+        }
     })
 })
 

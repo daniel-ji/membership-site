@@ -14,7 +14,7 @@ const passportFunctions = require('./config/passportFunctions');
 const indexRouter = require('./routes/index');
 const customersRouter = require('./routes/customer');
 
-const Customer = require('./models/Customer');
+const Customer = require('./models/users/Customer');
 
 const app = express();
 
@@ -57,7 +57,7 @@ passport.serializeUser((user, done) => {
 
 passport.deserializeUser(passportFunctions.deserializeCustomer)
 
-passport.use(new LocalStrategy({usernameField: 'email'}, passportFunctions.verify))
+passport.use(new LocalStrategy(passportFunctions.verify))
 
 // Routes
 app.use('/', indexRouter);
