@@ -3,23 +3,38 @@ const router = express.Router();
 
 const bcrypt = require('bcrypt');
 const passport = require('passport');
+const mongoose = require('mongoose'); 
 
 const passportFunctions = require('../config/passportFunctions');
 
 const Customer = require('../models/Customer');
 
-/* GET customers */
+/* GET customer based on Object Id */
+router.get('/:id', passportFunctions.isAuthenticated, (req, res, next) => {
+    if (mongoose.Types.ObjectId.isValid(req.params.id)) {        
+        Customer.findOne({"_id": mongoose.Types.ObjectId(req.params.id)}).exec().then(result => {
+            res.status(200).json(result);
+        }).catch(err => {
+            console.log(err);
+            res.sendStatus(500);
+        })
+    } else {
+        res.sendStatus(400);
+    }
+}) 
+
+/* GET all customers */
 router.get('/', passportFunctions.isAuthenticated, (req, res, next) => {
-    Customer.findOne({}).exec().then(result => {
+    Customer.find({}).exec().then(result => {
         res.status(200).json(result);
     }).catch(err => {
         console.log(err);
         res.sendStatus(500);
     })
-}) 
+})
 
 /* PATCH (update) customer */
-router.patch('/', (req, res, next) => {
+router.patch('/', passportFunctions.isAuthenticated, (req, res, next) => {
     Customer.updateMany(req.body.filter, {$set: req.body.update}).exec().then(result => {
         res.status(200).json({'success': `Updated ${result.modifiedCount} user(s).`})
     }).catch(err => {
@@ -54,7 +69,7 @@ router.post('/signup', async (req, res, next) => {
 });
 
 /* DELETE customers */
-router.delete('/delete', (req, res, next) => {
+router.delete('/delete', passportFunctions.isAuthenticated, (req, res, next) => {
     Customer.deleteMany(req.body.filter).exec().then(result => {
         if (result.deletedCount === 0) {
             res.status(202).json({'info': 'No users deleted.'})
