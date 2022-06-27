@@ -7,7 +7,7 @@ const customerSchema = new Schema({
     type: {
         type: String,
         default: 'Customer',
-        immutable: true
+        immutable: true,
     },
     name: {
         type: String,

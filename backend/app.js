@@ -11,6 +11,7 @@ const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 
 // protection
+const hpp = require('hpp');
 const helmet = require('helmet');
 const cors = require('cors');
 const mongoSanitize = require('express-mongo-sanitize');
@@ -22,14 +23,14 @@ const authFunctions = require('./config/authFunctions');
 const indexRouter = require('./routes/index');
 const customersRouter = require('./routes/customer');
 
-const Customer = require('./models/users/Customer');
-
 const app = express();
 
 /** Middleware */ 
 
 // Helmet
 app.use(helmet());
+// HPP
+app.use(hpp());
 
 // CORS
 const corsOptions = {
@@ -78,6 +79,8 @@ passport.serializeUser((user, done) => {
 passport.deserializeUser(authFunctions.deserializeCustomer)
 
 passport.use(new LocalStrategy(authFunctions.verify))
+
+// Nodemailer
 
 // Routes
 app.use('/', indexRouter);

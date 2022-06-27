@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 
+const transporter = require('../config/nodemailer');
+
 const bcrypt = require('bcrypt');
 const passport = require('passport');
 
@@ -14,9 +16,18 @@ const authFunctions = require('../config/authFunctions');
 
 const Customer = require('../models/users/Customer');
 
+/* GET logged in or not */
+router.get('/loggedin', (req, res) => {
+    if (req.isAuthenticated()) {
+        res.status(200).json({loggedIn: true});
+    } else {
+        res.status(401).json({loggedIn: false});
+    }
+});
+
 /* GET own customer information (if currently logged in as a customer) */
 router.get('/self', authFunctions.isAuthenticated, (req, res, next) => {
-    Customer.find({"_id": req.user._id.toString()}).exec().then(result => {
+    Customer.findOne({"_id": req.user._id.toString()}).exec().then(result => {
         res.status(200).json(result);
     }).catch(err => {
         console.log(err);
@@ -74,6 +85,9 @@ router.post('/signup', async (req, res, next) => {
         if (await Customer.findOne({username: req.body.email}).exec()) {
             return res.status(409).json({'error': 'Email already exists'});
         }
+        if (await Customer.findOne({phone: req.body.phone}).exec()) {
+            return res.status(409).json({'error': 'Phone number already exists'});
+        }
 
         const newCustomer = await Customer.create({
             name: req.body.name,
@@ -84,6 +98,14 @@ router.post('/signup', async (req, res, next) => {
             birthday: req.body.birthday,
             password: hashedPw
         })
+
+        const verify = await transporter.sendMail({
+            from: '"Verify Email" <jidaniel1234@gmail.com>',
+            to: newCustomer.email,
+            subject: 'Verify Email'
+        })
+
+        console.log(verify);
 
         res.status(201).json({'success': 'User created.'});
     } catch (err) {

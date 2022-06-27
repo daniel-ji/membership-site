@@ -5,13 +5,9 @@ import { Link } from 'react-router-dom'
 
 import { KeyboardDatePicker } from "@material-ui/pickers";
 
-const axios = require('axios');
+import validator from 'validator';
 
-window["nameRegex"] = /^(?![\s.]+$)[a-zA-Z\s.]*$/;
-window["emailRegex"] = /^(([^<>()[\].,;:\s@"]+(.[^<>()[\].,;:\s@"]+)*)|(".+"))@(([^<>()[\].,;:\s@"]+\.)+[^<>()[\].,;:\s@"]{2,})$/i;
-window["passwordRegex"] = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
-window["phoneRegex"] = /^[\d\-() ]{0,25}$/;
-window["phoneFinalRegex"] = /^[0-9]{10,11}$/;
+const axios = require('axios');
 
 export class SignUp extends Component {
     constructor(props) {
@@ -58,15 +54,19 @@ export class SignUp extends Component {
         if ((final && value === undefined) || value.length === 0) {
             return false;
         }
-        if (!this.state.whitelist.includes(category)) {
-            return window[category + (final && category === 'phone' ? "Final" : "") + "Regex"].test(value);
-        } else {
-            switch (category) {
-                case 'reenter':
-                    return value === this.state.password;
-                default: 
-                    return true;
-            }
+        switch (category) {
+            case 'name':
+                return /^(?![\s.]+$)[a-zA-Z\s.]*$/.test(value);
+            case 'email':
+                return validator.isEmail(value);
+            case 'password':
+                return validator.isStrongPassword(value);
+            case 'phone':
+                return validator.isPhoneNumber(value);
+            case 'reenter':
+                return value === this.state.password;
+            default: 
+                return true;
         }
     }
 
