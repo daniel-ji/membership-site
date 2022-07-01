@@ -16,6 +16,7 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const authFunctions = require('../config/authFunctions');
+const validFunctions = require('../config/validFunctions');
 
 const Customer = require('../models/users/Customer');
 
@@ -42,7 +43,8 @@ router.get('/verify/:token', (req, res) => {
                 if (err) {
                     res.status(500).json({'error': 'Internal server error'});
                 } else {
-                    res.status(200).json({'success': 'Customer verified'});
+                    res.redirect(process.env.NODE_ENV === 'DEVELOPMENT' ? 'http://localhost:3000/login'
+                    : '/login');
                 }
             });
         }
@@ -85,7 +87,7 @@ router.get('/all', authFunctions.isAuthenticated, (req, res, next) => {
 
 /* PATCH (update) customer */
 router.patch('/', authFunctions.isAuthenticated, (req, res, next) => {
-    if (authFunctions.isObjectStrict(req.body.filter, req.body.update)) {
+    if (validFunctions.isObjectStrict(req.body.filter, req.body.update)) {
         Customer.updateMany(req.body.filter, {$set: req.body.update}).exec().then(result => {
             if (result.modifiedCount === 0) {
                 res.status(200).json({'info': `Updated 0 users.`})
@@ -103,6 +105,10 @@ router.patch('/', authFunctions.isAuthenticated, (req, res, next) => {
 
 /* POST new customer */
 router.post('/signup', async (req, res, next) => {
+    if (!validFunctions.isValidCustomer(req.body)) {
+        return res.sendStatus(401);
+    }
+
     try {
         const hashedPw = await bcrypt.hash(req.body.password, 10);
 
@@ -121,7 +127,7 @@ router.post('/signup', async (req, res, next) => {
             address: req.body.address,
             birthday: req.body.birthday,
             password: hashedPw,
-            verifyToken: crypto.randomBytes(24).toString('hex')
+            verifyToken: crypto.randomBytes(8).toString('hex')
         })
 
         const htmlEmail = await ejs.renderFile(
@@ -139,7 +145,6 @@ router.post('/signup', async (req, res, next) => {
 
         res.status(201).json({'success': 'User created.'});
     } catch (err) {
-        console.log(err);
         res.sendStatus(500);
     }
 });
@@ -147,7 +152,7 @@ router.post('/signup', async (req, res, next) => {
 /* DELETE customers */
 // router.delete('/delete', authFunctions.isAuthenticated, (req, res, next) => {
 router.delete('/delete', (req, res, next) => {
-    if (authFunctions.isObjectStrict(req.body.filter)) {
+    if (validFunctions.isObjectStrict(req.body.filter)) {
         Customer.deleteMany(req.body.filter).exec().then(result => {
             if (result.deletedCount === 0) {
                 res.status(202).json({'info': 'No users deleted.'})

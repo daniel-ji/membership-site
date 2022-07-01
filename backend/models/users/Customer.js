@@ -3,6 +3,8 @@ const Schema = mongoose.Schema;
 
 const User = require('./User');
 
+const moment = require('moment');
+
 const customerSchema = new Schema({
     type: {
         type: String,
@@ -27,6 +29,9 @@ const customerSchema = new Schema({
     }, 
     birthday: {
         type: String,
+        validate: [val => {
+            return moment(val, 'eee mmm dd yyyy').isValid() && moment(val, 'eee mmm dd yyyy').isBefore(moment().subtract(18, 'years'));
+        }, 'Invalid birthday'],
         required: true
     }, 
     preferences: [String],
