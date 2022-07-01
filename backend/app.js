@@ -80,8 +80,6 @@ passport.deserializeUser(authFunctions.deserializeCustomer)
 
 passport.use(new LocalStrategy(authFunctions.verify))
 
-// Nodemailer
-
 // Routes
 app.use('/', indexRouter);
 app.use('/api/customers', customersRouter);

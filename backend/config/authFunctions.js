@@ -8,6 +8,7 @@ const verify = (username, password, done) => {
         bcrypt.compare(password, customer.password, (err, result) => {
             if (err) return err;
             if (!result) return done(null, false, {'message': 'Invalid password.'});
+            if (customer.active === false) return done(null, false, {'message': 'Account not verified.'});
             return done(null, customer);
         })
     })

@@ -40,6 +40,7 @@ const customerSchema = new Schema({
     }, 
     promotions: [Schema.Types.ObjectId],
     // Possibly: array of objects, eac contains login/logoff/action and time 
+    verifyToken: String,
 })
 
 module.exports = User.discriminator('Customer', customerSchema);

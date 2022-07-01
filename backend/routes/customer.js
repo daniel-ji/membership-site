@@ -1,8 +1,11 @@
 const express = require('express');
 const router = express.Router();
+const path = require('path');
 
+const ejs = require('ejs');
 const transporter = require('../config/nodemailer');
 
+const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const passport = require('passport');
 
@@ -24,6 +27,27 @@ router.get('/loggedin', (req, res) => {
         res.status(401).json({loggedIn: false});
     }
 });
+
+/* GET verify customer signup */
+router.get('/verify/:token', (req, res) => {
+    Customer.findOne({verifyToken: req.params.token}, (err, customer) => {
+        if (err) {
+            res.status(500).json({'error': 'Internal server error'});
+        } else if (!customer) {
+            res.status(404).json({error: 'Customer not found'});
+        } else {
+            customer.active = true;
+            customer.verifyToken = undefined;
+            customer.save((err) => {
+                if (err) {
+                    res.status(500).json({'error': 'Internal server error'});
+                } else {
+                    res.status(200).json({'success': 'Customer verified'});
+                }
+            });
+        }
+    });
+})
 
 /* GET own customer information (if currently logged in as a customer) */
 router.get('/self', authFunctions.isAuthenticated, (req, res, next) => {
@@ -96,13 +120,19 @@ router.post('/signup', async (req, res, next) => {
             username: req.body.email,
             address: req.body.address,
             birthday: req.body.birthday,
-            password: hashedPw
+            password: hashedPw,
+            verifyToken: crypto.randomBytes(24).toString('hex')
         })
+
+        const htmlEmail = await ejs.renderFile(
+            path.join(__dirname, '..', 'views', 'emails', 'verify.ejs'), {
+            url: process.env.DOMAIN + "/api/customers/verify/" + newCustomer.verifyToken});
 
         const verify = await transporter.sendMail({
             from: '"Verify Email" <jidaniel1234@gmail.com>',
             to: newCustomer.email,
-            subject: 'Verify Email'
+            subject: 'Verify Email',
+            html: htmlEmail
         })
 
         console.log(verify);
@@ -115,7 +145,8 @@ router.post('/signup', async (req, res, next) => {
 });
 
 /* DELETE customers */
-router.delete('/delete', authFunctions.isAuthenticated, (req, res, next) => {
+// router.delete('/delete', authFunctions.isAuthenticated, (req, res, next) => {
+router.delete('/delete', (req, res, next) => {
     if (authFunctions.isObjectStrict(req.body.filter)) {
         Customer.deleteMany(req.body.filter).exec().then(result => {
             if (result.deletedCount === 0) {
