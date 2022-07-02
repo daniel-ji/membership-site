@@ -87,6 +87,10 @@ router.get('/all', authFunctions.isAuthenticated, (req, res, next) => {
 
 /* PATCH (update) customer */
 router.patch('/', authFunctions.isAuthenticated, (req, res, next) => {
+    if (!validFunctions.isValidCustomerUpdate(req.body)) {
+        res.sendStatus(400)
+    }
+
     if (validFunctions.isObjectStrict(req.body.filter, req.body.update)) {
         Customer.updateMany(req.body.filter, {$set: req.body.update}).exec().then(result => {
             if (result.modifiedCount === 0) {
@@ -105,7 +109,7 @@ router.patch('/', authFunctions.isAuthenticated, (req, res, next) => {
 
 /* POST new customer */
 router.post('/signup', async (req, res, next) => {
-    if (!validFunctions.isValidCustomer(req.body)) {
+    if (!validFunctions.isValidCustomerReg(req.body)) {
         return res.sendStatus(400);
     }
 

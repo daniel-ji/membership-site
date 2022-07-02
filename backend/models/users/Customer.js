@@ -4,6 +4,7 @@ const Schema = mongoose.Schema;
 const User = require('./User');
 
 const moment = require('moment');
+const validator = require('validator');
 
 const customerSchema = new Schema({
     type: {
@@ -14,18 +15,30 @@ const customerSchema = new Schema({
     name: {
         type: String,
         required: true,
+        validate: [val => {
+            return val.length > 0 && val.length <= 100;
+        }, 'Invalid name']
     },
     phone: {
         type: String,
         required: () => {return this.email != null},
+        validate: [val => {
+            return validator.isMobilePhone(val);
+        }, 'Invalid phone number']
     }, 
     email: {
         type: String, 
-        required: () => {return this.phone != null}
+        required: () => {return this.phone != null},
+        validate: [val => {
+            return validator.isEmail(val);
+        }, 'Invalid email']
     },
     address: {
         type: String,
-        required: true
+        required: true,
+        validate: [val => {
+            return val.length > 0 && val.length <= 200;
+        }, 'Invalid address']
     }, 
     birthday: {
         type: String,
