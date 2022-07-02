@@ -11,8 +11,8 @@ const isObjectStrict = (...values) => {
 }
 
 const isDate = (date, yearsBefore = 0) => {
-    return moment(date, 'eee mmm dd yyyy').isValid() && 
-        (yearsBefore === -1 || moment(date, 'eee mmm dd yyyy').isBefore(moment().subtract(yearsBefore, 'years')))
+    return moment(date, 'E MMM dd yyyy').isValid() && 
+        (yearsBefore === -1 || moment(date, 'E MMM dd yyyy').isBefore(moment().subtract(yearsBefore, 'years')))
 }
 
 const isValidCustomer = (body) => {

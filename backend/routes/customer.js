@@ -106,7 +106,7 @@ router.patch('/', authFunctions.isAuthenticated, (req, res, next) => {
 /* POST new customer */
 router.post('/signup', async (req, res, next) => {
     if (!validFunctions.isValidCustomer(req.body)) {
-        return res.sendStatus(401);
+        return res.sendStatus(400);
     }
 
     try {
