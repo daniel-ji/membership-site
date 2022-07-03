@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 
 import { KeyboardDatePicker } from "@material-ui/pickers";
 
+import moment from 'moment';
 import validator from 'validator';
 
 const axios = require('axios');
@@ -59,8 +60,11 @@ export class SignUp extends Component {
                 return /^(?![\s.]+$)[a-zA-Z\s.]*$/.test(value);
             case 'email':
                 return validator.isEmail(value);
+            case 'date':
+                return moment.isMoment(value) && value.isValid() && 
+                    value.isBefore(moment().subtract(18, 'years'));
             case 'password':
-                return validator.isStrongPassword(value);
+                return validator.isStrongPassword(value, {minSymbols: 0});
             case 'phone':
                 return validator.isPhoneNumber(value);
             case 'reenter':
@@ -75,6 +79,7 @@ export class SignUp extends Component {
             nameValid: this.validate('name'), 
             phoneValid: this.validate('phone'), 
             emailValid: this.validate('email'), 
+            dateValid: this.validate('date'),
             passwordValid: this.validate('password'),
             reenterValid: this.validate('reenter')
         }, () => {

@@ -35,7 +35,7 @@ export class LogIn extends Component {
             case 'email':
                 return validator.isEmail(value);
             case 'password':
-                return validator.isStrongPassword(value);
+                return validator.isStrongPassword(value, {minsymbols: 0});
             case 'phone':
                 return validator.isPhoneNumber(value);
             case 'reenter':
