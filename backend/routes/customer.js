@@ -154,8 +154,8 @@ router.post('/signup', async (req, res, next) => {
 });
 
 /* DELETE customers */
-// router.delete('/delete', authFunctions.isAuthenticated, (req, res, next) => {
-router.delete('/delete', (req, res, next) => {
+router.delete('/delete', authFunctions.isAuthenticated, authFunctions.isAuthorizedManager, (req, res, next) => {
+// router.delete('/delete', (req, res, next) => {
     if (validFunctions.isObjectStrict(req.body.filter)) {
         Customer.deleteMany(req.body.filter).exec().then(result => {
             if (result.deletedCount === 0) {

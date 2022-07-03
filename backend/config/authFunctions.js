@@ -19,10 +19,15 @@ const isAuthenticated = (req, res, next) => {
     res.sendStatus(401);
 }
 
+const isAuthorizedManager = (req, res, next) => {
+    if (req.user.type === 'Manager') return next();
+    res.sendStatus(403);
+}
+
 const deserializeCustomer = (id, done) => {
     Customer.findById(id, (err, user) => {
         done(err, user);
     })
 }
 
-module.exports = {verify, isAuthenticated, deserializeCustomer};
+module.exports = {verify, isAuthenticated, isAuthorizedManager, deserializeCustomer};

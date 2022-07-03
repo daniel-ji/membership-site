@@ -1,7 +1,7 @@
 const moment = require('moment');
 const validator = require('validator');
 
-const customerFields = ['name', 'phone', 'email', 'address', 'birthday', 'password'];
+const customerFields = ['name', 'phone', 'email', 'address', 'birthday', 'password', 'username'];
 
 const isObjectStrict = (...values) => {
     let result = true;
@@ -31,7 +31,7 @@ const containsAllowedFields = (body, whitelist) => {
 
 const isValidCustomerReg = (body) => {
     return body.username === body.email 
-        && Object.keys(body).length == customerFields.length + 1
+        && Object.keys(body).length == customerFields.length
         && isValidCustomerUpdate(body)
 }
 

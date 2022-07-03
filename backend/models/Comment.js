@@ -16,8 +16,12 @@ const commentSchema = new Schema({
     },
     replier: Schema.Types.ObjectId,
     reply: String,
-    replyTimestamp: String
+    replyTimestamp: String,
     // possible issue: should be inserting the replier, reply, and timestap field at the same time
+    deleted: {
+        type: Boolean,
+        default: false
+    }
 })
 
 module.exports = mongoose.model('Comment', commentSchema);
