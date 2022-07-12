@@ -21,7 +21,9 @@ require('dotenv').config();
 const authFunctions = require('./config/authFunctions'); 
 
 const indexRouter = require('./routes/index');
-const customersRouter = require('./routes/customer');
+const userRouter = require('./routes/user');
+const customerRouter = require('./routes/customer');
+const managerRouter = require('./routes/manager');
 
 const app = express();
 
@@ -76,12 +78,14 @@ passport.serializeUser((user, done) => {
     done(null, user.id);
 })
 
-passport.deserializeUser(authFunctions.deserializeCustomer)
+passport.deserializeUser(authFunctions.deserializeUser)
 
-passport.use(new LocalStrategy(authFunctions.verify))
+passport.use(new LocalStrategy({passReqToCallback: true}, authFunctions.verify))
 
 // Routes
 app.use('/', indexRouter);
-app.use('/api/customers', customersRouter);
+app.use('/api/user', userRouter);
+app.use('/api/customer', customerRouter);
+app.use('/api/manager', managerRouter);
 
 module.exports = app;

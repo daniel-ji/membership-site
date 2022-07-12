@@ -20,15 +20,6 @@ const validFunctions = require('../config/validFunctions');
 
 const Customer = require('../models/users/Customer');
 
-/* GET logged in or not */
-router.get('/loggedin', (req, res) => {
-    if (req.isAuthenticated()) {
-        res.status(200).json({loggedIn: true});
-    } else {
-        res.status(401).json({loggedIn: false});
-    }
-});
-
 /* GET verify customer signup */
 router.get('/verify/:token', (req, res) => {
     Customer.findOne({verifyToken: req.params.token}, (err, customer) => {
@@ -51,23 +42,12 @@ router.get('/verify/:token', (req, res) => {
     });
 })
 
-/* GET own customer information (if currently logged in as a customer) */
-router.get('/self', authFunctions.isAuthenticated, (req, res, next) => {
-    Customer.findOne({"_id": req.user._id.toString()}).exec().then(result => {
-        res.status(200).json(result);
-    }).catch(err => {
-        console.log(err);
-        res.sendStatus(500);
-    })
-})
-
 /* GET customer based on Object Id */
 router.get('/one/:id', authFunctions.isAuthenticated, (req, res, next) => {
     if (validator.isMongoId(req.params.id)) {        
         Customer.findOne({"_id": mongoose.Types.ObjectId(req.params.id)}).exec().then(result => {
             res.status(200).json(result);
         }).catch(err => {
-            console.log(err);
             res.sendStatus(500);
         })
     } else {
@@ -76,7 +56,7 @@ router.get('/one/:id', authFunctions.isAuthenticated, (req, res, next) => {
 }) 
 
 /* GET all customers */
-router.get('/all', authFunctions.isAuthenticated, (req, res, next) => {
+router.get('/all', authFunctions.isAuthorizedManager, (req, res, next) => {
     Customer.find({}).exec().then(result => {
         res.status(200).json(result);
     }).catch(err => {
@@ -145,16 +125,14 @@ router.post('/signup', async (req, res, next) => {
             html: htmlEmail
         })
 
-        console.log(verify);
-
-        res.status(201).json({'success': 'User created.'});
+        res.status(201).json({'success': 'Customer created.'});
     } catch (err) {
         res.sendStatus(500);
     }
 });
 
 /* DELETE customers */
-router.delete('/delete', authFunctions.isAuthenticated, authFunctions.isAuthorizedManager, (req, res, next) => {
+router.delete('/delete', authFunctions.isAuthorizedManager, (req, res, next) => {
 // router.delete('/delete', (req, res, next) => {
     if (validFunctions.isObjectStrict(req.body.filter)) {
         Customer.deleteMany(req.body.filter).exec().then(result => {
@@ -171,26 +149,5 @@ router.delete('/delete', authFunctions.isAuthenticated, authFunctions.isAuthoriz
         res.sendStatus(400);
     }
 });
-
-/* POST login request */
-router.post('/login', passport.authenticate('local', {successMessage: 'Logged in.', failureMessage: 'Failed to log in.'}), (req, res) => {
-    if (req.user) {
-        res.status(200).json({'success': 'Logged in.'})
-    } else {
-        res.status(401);
-    }
-})
-
-/* POST logout request */
-router.post('/logout', (req, res, next) => {
-    req.logout(err => {
-        if (err) return next(err);
-        if (process.env.NODE_ENV === "DEVELOPMENT") {
-            res.sendStatus(200);
-        } else {
-            res.redirect('/');
-        }
-    })
-})
 
 module.exports = router;

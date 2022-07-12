@@ -9,6 +9,10 @@ const managerSchema = new Schema({
         default: 'Manager',
         immutable: true
     },
+    active: {
+        type: Boolean,
+        default: true,
+    },
     addedAccounts: [Schema.Types.ObjectId],
     repliedComments: [Schema.Types.ObjectId]
 })
