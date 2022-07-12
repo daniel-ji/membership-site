@@ -116,7 +116,7 @@ router.post('/signup', async (req, res, next) => {
 
         const htmlEmail = await ejs.renderFile(
             path.join(__dirname, '..', 'views', 'emails', 'verify.ejs'), {
-            url: process.env.DOMAIN + "/api/customers/verify/" + newCustomer.verifyToken});
+            url: process.env.DOMAIN + "/api/customer/verify/" + newCustomer.verifyToken});
 
         const verify = await transporter.sendMail({
             from: '"Verify Email" <jidaniel1234@gmail.com>',
@@ -133,13 +133,12 @@ router.post('/signup', async (req, res, next) => {
 
 /* DELETE customers */
 router.delete('/delete', authFunctions.isAuthorizedManager, (req, res, next) => {
-// router.delete('/delete', (req, res, next) => {
     if (validFunctions.isObjectStrict(req.body.filter)) {
         Customer.deleteMany(req.body.filter).exec().then(result => {
             if (result.deletedCount === 0) {
-                res.status(202).json({'info': 'No users deleted.'})
+                res.status(202).json({'info': 'No customers deleted.'})
             } else {
-                res.status(200).json({'success': `Deleted ${result.deletedCount} user(s).`});
+                res.status(200).json({'success': `Deleted ${result.deletedCount} customer(s).`});
             }
         }).catch(err => {
             console.log(err);

@@ -12,7 +12,7 @@ const Manager = require('../models/users/Manager');
 
 dotenv.config();
 
-/* GET all customers */
+/* GET all managers */
 router.get('/all', authFunctions.isOwner, (req, res, next) => {
     Manager.find({}).exec().then(result => {
         res.status(200).json(result);
@@ -52,5 +52,23 @@ router.post('/create', authFunctions.isOwner, async (req, res) => {
         res.sendStatus(500);
     }
 })
+
+/* DELETE managers */
+router.delete('/delete', authFunctions.isOwner, (req, res, next) => {
+    if (validFunctions.isObjectStrict(req.body.filter)) {
+        Manager.deleteMany(req.body.filter).exec().then(result => {
+            if (result.deletedCount === 0) {
+                res.status(202).json({'info': 'No managers deleted.'})
+            } else {
+                res.status(200).json({'success': `Deleted ${result.deletedCount} manager(s).`});
+            }
+        }).catch(err => {
+            console.log(err);
+            res.sendStatus(500);
+        });
+    } else {
+        res.sendStatus(400);
+    }
+});
 
 module.exports = router;

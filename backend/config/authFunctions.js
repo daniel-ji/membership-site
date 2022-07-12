@@ -45,7 +45,8 @@ const isAuthorizedManager = (req, res, next) => {
 
 // TODO: Remove OWNER_PASSWORD from here after implementing owner
 const isOwner = (req, res, next) => {
-    if (req.isAuthenticated() && req.user.type === 'Owner' || req.body.ownerPassword === process.env.OWNER_PASSWORD) return next();
+    if (req.isAuthenticated() && (req.user.type === 'Owner' 
+        || req.body.ownerPassword === process.env.OWNER_PASSWORD)) return next();
     res.sendStatus(403);
 }
 
