@@ -3,12 +3,12 @@ const Schema = mongoose.Schema;
 
 const User = require('./User')
 
-const ownerSchema = new Schema({
+const executiveSchema = new Schema({
     type: {
         type: String,
-        default: 'Owner',
+        default: 'Executive',
         immutable: true,
     }
 })
 
-module.exports = User.discriminator('Owner', ownerSchema);
+module.exports = User.discriminator('Executive', executiveSchema);

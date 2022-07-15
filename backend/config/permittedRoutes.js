@@ -1,7 +1,7 @@
 const Cashier = require('../models/users/Cashier');
 const Customer = require('../models/users/Customer');
 const Manager= require('../models/users/Manager');
-const Owner = require('../models/users/Owner');
+const Executive = require('../models/users/Executive');
 
 const permittedRoutes = {
     'Customer': [
@@ -13,7 +13,7 @@ const permittedRoutes = {
     'Manager': [
         {'GET': '/api/customers/all'}
     ], 
-    'Owner': [
+    'Executive': [
         {'GET': '/api/customers/all'}
     ]
 }

@@ -15,9 +15,9 @@ dotenv.config();
 /**
  * GET all managers.
  * 
- * Authorized Users: Owners
+ * Authorized Users: Executives
  */
-router.get('/all', authFunctions.isOwner, (req, res, next) => {
+router.get('/all', authFunctions.isExecutive, (req, res, next) => {
     Manager.find({}).exec().then(result => {
         res.status(200).json(result);
     }).catch(err => {
@@ -29,9 +29,9 @@ router.get('/all', authFunctions.isOwner, (req, res, next) => {
 /**
  * POST new manager.
  * 
- * Authorized Users: Owners
+ * Authorized Users: Executives
  */
-router.post('/create', authFunctions.isOwner, async (req, res) => {
+router.post('/create', authFunctions.isExecutive, async (req, res) => {
     if (!validFunctions.isValidManagerReg(req.body)) {
         return res.sendStatus(400);
     }
@@ -64,11 +64,11 @@ router.post('/create', authFunctions.isOwner, async (req, res) => {
 /**
  * PATCH update manager.
  * 
- * Authorized Users: Self, Owners
+ * Authorized Users: Self, Executives
  * 
  * @param {String} _id - ObjectId of manager; required for updating self
  */
-router.patch('/', authFunctions.isOwnerOrSelf, (req, res, next) => {
+router.patch('/', authFunctions.isExecutiveOrSelf, (req, res, next) => {
     if (!validFunctions.isValidManagerUpdate(req.body)) {
         res.sendStatus(400)
     }
@@ -92,9 +92,9 @@ router.patch('/', authFunctions.isOwnerOrSelf, (req, res, next) => {
 /**
  * DELETE managers.
  * 
- * Authorized Users: Owners
+ * Authorized Users: Executives
  */
-router.delete('/delete', authFunctions.isOwner, (req, res, next) => {
+router.delete('/delete', authFunctions.isExecutive, (req, res, next) => {
     if (validFunctions.isObjectStrict(req.body.filter)) {
         Manager.deleteMany(req.body.filter).exec().then(result => {
             if (result.deletedCount === 0) {

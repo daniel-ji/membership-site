@@ -2,8 +2,8 @@ const moment = require('moment');
 const validator = require('validator');
 
 const customerFields = ['name', 'phone', 'email', 'address', 'birthday', 'password', 'username'];
-// TODO: Remove ownerPassword when done implementing owner
-const managerFields = ['name', 'phone', 'email', 'password', 'ownerPassword'];
+// TODO: Remove executivePassword when done implementing executive
+const managerFields = ['name', 'phone', 'email', 'password', 'executivePassword'];
 
 const isObjectStrict = (...values) => {
     let result = true;

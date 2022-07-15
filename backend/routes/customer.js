@@ -49,7 +49,7 @@ router.get('/verify/:token', (req, res) => {
 /**
  * GET customer based on ObjectId. 
  * 
- * Authorized Users: Managers, Owners
+ * Authorized Users: Managers, Executives
  */
 router.get('/one/:id', authFunctions.isManager, (req, res, next) => {
     if (validator.isMongoId(req.params.id)) {        
@@ -66,7 +66,7 @@ router.get('/one/:id', authFunctions.isManager, (req, res, next) => {
 /**
  * GET all customers.
  * 
- * Authorized Users: Managers, Owners
+ * Authorized Users: Managers, Executives
  */
 router.get('/all', authFunctions.isManager, (req, res, next) => {
     Customer.find({}).exec().then(result => {
@@ -80,7 +80,7 @@ router.get('/all', authFunctions.isManager, (req, res, next) => {
 /**
  * PATCH customer.
  * 
- * Authorized Users: Self, Managers, Owners
+ * Authorized Users: Self, Managers, Executives
  * 
  * @param {String} _id - ObjectId of customer; required for updating self
  */
@@ -156,7 +156,7 @@ router.post('/signup', async (req, res, next) => {
 /** 
  * DELETE customers.
  * 
- * Authorized Users: Managers, Owners
+ * Authorized Users: Managers, Executives
  */
 router.delete('/delete', authFunctions.isManager, (req, res, next) => {
     if (validFunctions.isObjectStrict(req.body.filter)) {

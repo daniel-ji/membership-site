@@ -1,5 +1,5 @@
 /**
- * user.js contains the shared routes for all users - customers, managers, and owners
+ * user.js contains the shared routes for all users - customers, managers, and executives
  */
 
 const express = require('express');
@@ -24,7 +24,7 @@ router.get('/loggedin', authFunctions.isAuthenticated, (req, res) => {
 /** 
  * GET user information.
  * 
- * Authorized Users: Customers, Managers, Owners
+ * Authorized Users: Customers, Managers, Executives
  */
 router.get('/self', authFunctions.isAuthenticated, (req, res, next) => {
     authFunctions.getUserType(req.user.type)
