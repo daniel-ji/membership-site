@@ -33,7 +33,7 @@ const containsAllowedFields = (body, whitelist) => {
 
 const isValidCustomerReg = (body) => {
     return body.username === body.email 
-        && Object.keys(body).length == customerFields.length
+        && Object.keys(body).length === customerFields.length
         && isValidCustomerUpdate(body)
 }
 
@@ -48,7 +48,7 @@ const isValidCustomerUpdate = (body) => {
 }
 
 const isValidManagerReg = (body) => {
-    return Object.keys(body).length == managerFields.length
+    return Object.keys(body).length === managerFields.length
         && isValidManagerUpdate(body)
 }
 

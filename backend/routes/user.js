@@ -12,16 +12,20 @@ dotenv.config();
 
 const authFunctions = require('../config/authFunctions');
 
-/* GET logged in or not */
-router.get('/loggedin', (req, res) => {
-    if (req.isAuthenticated()) {
-        res.status(200).json({loggedIn: true, type: req.user.type});
-    } else {
-        res.status(401).json({loggedIn: false});
-    }
+/**
+ * GET logged in status.
+ * 
+ * Authorized Users: Everyone
+ */
+router.get('/loggedin', authFunctions.isAuthenticated, (req, res) => {
+    res.status(200).json({loggedIn: true, type: req.user.type});
 });
 
-/* GET own information (if currently logged in) */
+/** 
+ * GET user information.
+ * 
+ * Authorized Users: Customers, Managers, Owners
+ */
 router.get('/self', authFunctions.isAuthenticated, (req, res, next) => {
     authFunctions.getUserType(req.user.type)
     .findOne({"_id": req.user._id.toString()}).exec().then(result => {
@@ -31,8 +35,11 @@ router.get('/self', authFunctions.isAuthenticated, (req, res, next) => {
         })
 })
 
-
-/* POST login request */
+/** 
+ * POST login request.
+ * 
+ * Authorized Users: Everyone
+ */
 router.post('/login/:type', passport.authenticate('local', {successMessage: 'Logged in.', failureMessage: 'Failed to log in.'}), (req, res) => {
     if (req.user) {
         res.status(200).json({'success': 'Logged in.'})
@@ -41,7 +48,11 @@ router.post('/login/:type', passport.authenticate('local', {successMessage: 'Log
     }
 })
 
-/* POST logout request */
+/**
+ * POST logout request.
+ * 
+ * Authorized Users: Everyone
+ */
 router.post('/logout', (req, res, next) => {
     req.logout(err => {
         if (err) return next(err);

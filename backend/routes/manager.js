@@ -12,7 +12,11 @@ const Manager = require('../models/users/Manager');
 
 dotenv.config();
 
-/* GET all managers */
+/**
+ * GET all managers.
+ * 
+ * Authorized Users: Owners
+ */
 router.get('/all', authFunctions.isOwner, (req, res, next) => {
     Manager.find({}).exec().then(result => {
         res.status(200).json(result);
@@ -22,7 +26,11 @@ router.get('/all', authFunctions.isOwner, (req, res, next) => {
     })
 })
 
-/* POST new manager */
+/**
+ * POST new manager.
+ * 
+ * Authorized Users: Owners
+ */
 router.post('/create', authFunctions.isOwner, async (req, res) => {
     if (!validFunctions.isValidManagerReg(req.body)) {
         return res.sendStatus(400);
@@ -53,7 +61,39 @@ router.post('/create', authFunctions.isOwner, async (req, res) => {
     }
 })
 
-/* DELETE managers */
+/**
+ * PATCH update manager.
+ * 
+ * Authorized Users: Self, Owners
+ * 
+ * @param {String} _id - ObjectId of manager; required for updating self
+ */
+router.patch('/', authFunctions.isOwnerOrSelf, (req, res, next) => {
+    if (!validFunctions.isValidManagerUpdate(req.body)) {
+        res.sendStatus(400)
+    }
+
+    if (validFunctions.isObjectStrict(req.body.filter, req.body.update)) {
+        Manager.updateMany(req.body.filter, {$set: req.body.update}).exec().then(result => {
+            if (result.modifiedCount === 0) {
+                res.status(200).json({'info': `Updated 0 users.`})
+            } else {
+                res.status(200).json({'success': `Updated ${result.modifiedCount} user(s).`})
+            }
+        }).catch(err => {
+            console.log(err);
+            res.sendStatus(500);
+        })
+    } else {
+        res.sendStatus(400);
+    }
+})
+
+/**
+ * DELETE managers.
+ * 
+ * Authorized Users: Owners
+ */
 router.delete('/delete', authFunctions.isOwner, (req, res, next) => {
     if (validFunctions.isObjectStrict(req.body.filter)) {
         Manager.deleteMany(req.body.filter).exec().then(result => {

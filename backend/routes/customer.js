@@ -20,7 +20,11 @@ const validFunctions = require('../config/validFunctions');
 
 const Customer = require('../models/users/Customer');
 
-/* GET verify customer signup */
+/**
+ * GET request for verifying customer signup.
+ * 
+ * Authorized Users: Everyone
+ */
 router.get('/verify/:token', (req, res) => {
     Customer.findOne({verifyToken: req.params.token}, (err, customer) => {
         if (err) {
@@ -42,8 +46,12 @@ router.get('/verify/:token', (req, res) => {
     });
 })
 
-/* GET customer based on Object Id */
-router.get('/one/:id', authFunctions.isAuthenticated, (req, res, next) => {
+/**
+ * GET customer based on ObjectId. 
+ * 
+ * Authorized Users: Managers, Owners
+ */
+router.get('/one/:id', authFunctions.isManager, (req, res, next) => {
     if (validator.isMongoId(req.params.id)) {        
         Customer.findOne({"_id": mongoose.Types.ObjectId(req.params.id)}).exec().then(result => {
             res.status(200).json(result);
@@ -55,8 +63,12 @@ router.get('/one/:id', authFunctions.isAuthenticated, (req, res, next) => {
     }
 }) 
 
-/* GET all customers */
-router.get('/all', authFunctions.isAuthorizedManager, (req, res, next) => {
+/**
+ * GET all customers.
+ * 
+ * Authorized Users: Managers, Owners
+ */
+router.get('/all', authFunctions.isManager, (req, res, next) => {
     Customer.find({}).exec().then(result => {
         res.status(200).json(result);
     }).catch(err => {
@@ -65,8 +77,14 @@ router.get('/all', authFunctions.isAuthorizedManager, (req, res, next) => {
     })
 })
 
-/* PATCH (update) customer */
-router.patch('/', authFunctions.isAuthenticated, (req, res, next) => {
+/**
+ * PATCH customer.
+ * 
+ * Authorized Users: Self, Managers, Owners
+ * 
+ * @param {String} _id - ObjectId of customer; required for updating self
+ */
+router.patch('/', authFunctions.isManagerOrSelf, (req, res, next) => {
     if (!validFunctions.isValidCustomerUpdate(req.body)) {
         res.sendStatus(400)
     }
@@ -87,7 +105,11 @@ router.patch('/', authFunctions.isAuthenticated, (req, res, next) => {
     }
 })
 
-/* POST new customer */
+/** 
+ * POST new customer.
+ * 
+ * Authorized Users: Everyone
+ */
 router.post('/signup', async (req, res, next) => {
     if (!validFunctions.isValidCustomerReg(req.body)) {
         return res.sendStatus(400);
@@ -131,8 +153,12 @@ router.post('/signup', async (req, res, next) => {
     }
 });
 
-/* DELETE customers */
-router.delete('/delete', authFunctions.isAuthorizedManager, (req, res, next) => {
+/** 
+ * DELETE customers.
+ * 
+ * Authorized Users: Managers, Owners
+ */
+router.delete('/delete', authFunctions.isManager, (req, res, next) => {
     if (validFunctions.isObjectStrict(req.body.filter)) {
         Customer.deleteMany(req.body.filter).exec().then(result => {
             if (result.deletedCount === 0) {

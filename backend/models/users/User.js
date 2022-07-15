@@ -22,14 +22,14 @@ const userSchema = new Schema({
     },
     phone: {
         type: String,
-        required: () => {return this.email != null},
+        required: () => {return this.email !== null},
         validate: [val => {
             return validator.isMobilePhone(val);
         }, 'Invalid phone number']
     }, 
     email: {
         type: String, 
-        required: () => {return this.phone != null},
+        required: () => {return this.phone !== null},
         validate: [val => {
             return validator.isEmail(val);
         }, 'Invalid email']

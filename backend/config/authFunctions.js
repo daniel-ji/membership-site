@@ -26,6 +26,15 @@ const isAuthenticated = (req, res, next) => {
     res.sendStatus(401);
 }
 
+const isSelf = (req, res, next) => {
+    if (isSelfHelper(req, res, next)) return next();
+    res.sendStatus(403);
+}
+
+const isSelfHelper = (req, res, next) => {
+    return req.isAuthenticated() && (req.user._id.toString() === req.params.id ?? req.body?._id)
+}
+
 const getUserType = (type) => {
     switch (type.toLowerCase()) {
         case 'manager':
@@ -38,15 +47,33 @@ const getUserType = (type) => {
     }
 }
 
-const isAuthorizedManager = (req, res, next) => {
-    if (req.isAuthenticated() && req.user.type === 'Manager') return next();
+const isManager = (req, res, next) => {
+    if (isManagerHelper(req, res, next)) return next();
+    res.sendStatus(403);
+}
+
+const isManagerHelper = (req, res, next) => {
+    return (req.isAuthenticated() && req.user.type === 'Manager') || isOwnerHelper(req, res, next);
+}
+
+const isManagerOrSelf = (req, res, next) => {
+    if (isManagerHelper(req, res, next) || isSelfHelper(req, res, next)) return next();
     res.sendStatus(403);
 }
 
 // TODO: Remove OWNER_PASSWORD from here after implementing owner
 const isOwner = (req, res, next) => {
-    if (req.isAuthenticated() && (req.user.type === 'Owner' 
-        || req.body.ownerPassword === process.env.OWNER_PASSWORD)) return next();
+    if (isOwnerHelper(req, res, next)) return next();
+    res.sendStatus(403);
+}
+
+const isOwnerHelper = (req, res, next) => {
+    return (req.isAuthenticated() && (req.user.type === 'Owner' 
+    || req.body.ownerPassword === process.env.OWNER_PASSWORD))
+}
+
+const isOwnerOrSelf = (req, res, next) => {
+    if (isOwnerHelper(req, res, next) || isSelfHelper(req, res, next)) return next();
     res.sendStatus(403);
 }
 
@@ -62,4 +89,4 @@ const deserializeUser = (id, done) => {
     })
 }
 
-module.exports = {verify, isAuthenticated, getUserType, isAuthorizedManager, isOwner, deserializeUser};
+module.exports = {verify, isAuthenticated, getUserType, isSelf, isManager, isManagerOrSelf, isOwner, isOwnerOrSelf, deserializeUser};
