@@ -4,13 +4,12 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 
 const dotenv = require('dotenv');
+dotenv.config();
 
 const authFunctions = require('../config/authFunctions');
 const validFunctions = require('../config/validFunctions');
 
 const Manager = require('../models/users/Manager');
-
-dotenv.config();
 
 /**
  * GET all managers.

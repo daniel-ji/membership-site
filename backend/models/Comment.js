@@ -3,7 +3,7 @@ const Schema = mongoose.Schema;
 
 const commentSchema = new Schema({
     commentor: {
-        type: Schema.Types.ObjectId,
+        type: String,
         required: true
     },
     comment: {

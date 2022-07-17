@@ -24,6 +24,7 @@ const indexRouter = require('./routes/index');
 const userRouter = require('./routes/user');
 const customerRouter = require('./routes/customer');
 const managerRouter = require('./routes/manager');
+const commentRouter = require('./routes/comment');
 
 const app = express();
 
@@ -87,5 +88,6 @@ app.use('/', indexRouter);
 app.use('/api/user', userRouter);
 app.use('/api/customer', customerRouter);
 app.use('/api/manager', managerRouter);
+app.use('/api/comment', commentRouter);
 
 module.exports = app;

@@ -1,3 +1,9 @@
+/**
+ * User Schema.
+ * 
+ * A user can be a customer, manager, or executive.
+ */
+
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
@@ -37,8 +43,12 @@ const userSchema = new Schema({
     password: {
         type: String,
         required: true,
+        select: false
     },
-    audit: [Schema.Types.ObjectId],
+    audit: {
+        type: [Schema.Types.ObjectId],
+        select: false,
+    },
 })
 
 module.exports = mongoose.model('User', userSchema);

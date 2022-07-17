@@ -1,3 +1,7 @@
+/**
+ * Connect to MongoDB database.
+ */
+
 const mongoose = require('mongoose');
 
 const connectDB = () => {

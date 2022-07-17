@@ -1,3 +1,7 @@
+/**
+ * Set up nodemailer transporter for sending emails.
+ */
+
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({

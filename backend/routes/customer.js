@@ -1,3 +1,7 @@
+/**
+ * Customer routes.
+ */
+
 const express = require('express');
 const router = express.Router();
 const path = require('path');
@@ -7,12 +11,9 @@ const transporter = require('../config/nodemailer');
 
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
-const passport = require('passport');
 
-const mongoose = require('mongoose'); 
 const validator = require('validator');
 const dotenv = require('dotenv');
-
 dotenv.config();
 
 const authFunctions = require('../config/authFunctions');
@@ -53,7 +54,7 @@ router.get('/verify/:token', (req, res) => {
  */
 router.get('/one/:id', authFunctions.isManager, (req, res, next) => {
     if (validator.isMongoId(req.params.id)) {        
-        Customer.findOne({"_id": mongoose.Types.ObjectId(req.params.id)}).exec().then(result => {
+        Customer.findOne({_id: req.params.id}).exec().then(result => {
             res.status(200).json(result);
         }).catch(err => {
             res.sendStatus(500);

@@ -28,7 +28,7 @@ router.get('/loggedin', authFunctions.isAuthenticated, (req, res) => {
  */
 router.get('/self', authFunctions.isAuthenticated, (req, res, next) => {
     authFunctions.getUserType(req.user.type)
-    .findOne({"_id": req.user._id.toString()}).exec().then(result => {
+    .findOne({_id: req.user._id}).exec().then(result => {
             res.status(200).json(result);
         }).catch(err => {
             res.sendStatus(500);

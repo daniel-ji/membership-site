@@ -1,3 +1,7 @@
+/**
+ * Various authentication and authorization functions for login, users, etc.
+ */
+
 const bcrypt = require('bcrypt');
 
 const Executive = require('../models/users/Executive');
@@ -5,7 +9,6 @@ const Manager = require('../models/users/Manager');
 const Customer = require('../models/users/Customer');
 
 const dotenv = require('dotenv');
-
 dotenv.config();
 
 /**
@@ -17,7 +20,7 @@ dotenv.config();
  * @param {Callback} done callback function
  */
 const verify = (req, username, password, done) => {
-    getUserType(req.params.type).findOne({ $or: [{username: username}, {phone: username}]}, (err, user) => {
+    getUserType(req.params.type).findOne({ $or: [{username: username}, {phone: username}]}, {password: 1}, (err, user) => {
         if (err) return err;
         if (!user) return done(null, false, {'message': 'Invalid username.'});
         bcrypt.compare(password, user.password, (err, result) => {
@@ -45,6 +48,24 @@ const verify = (req, username, password, done) => {
             })
         }
     })
+}
+
+/**
+ * Returns MongoDB model based on user type.
+ * 
+ * @param {String} type user type - Executive, Manager, Customer 
+ * @returns {Object} MongoDB model - Executive, Manager, Customer
+ */
+ const getUserType = (type) => {
+    switch (type.toLowerCase()) {
+        case 'manager':
+            return Manager;
+        case 'executive':
+            return Executive;
+        case 'customer':
+        default: 
+            return Customer;
+    }
 }
 
 /**
@@ -78,26 +99,21 @@ const isSelfHelper = (req, res, next) => {
     return req.isAuthenticated() && (req.user._id.toString() === req.params.id ?? req.body?._id)
 }
 
-/**
- * Returns MongoDB model based on user type.
+/** Middleware function. 
  * 
- * @param {String} type user type - Executive, Manager, Customer 
- * @returns {Object} MongoDB model - Executive, Manager, Customer
- */
-const getUserType = (type) => {
-    switch (type.toLowerCase()) {
-        case 'manager':
-            return Manager;
-        case 'executive':
-            return Executive;
-        case 'customer':
-        default: 
-            return Customer;
-    }
+ * @returns Forbidden if current session is not a customer.
+*/
+const isCustomer = (req, res, next) => {
+    if (isCustomerHelper(req, res, next)) return next();
+    res.sendStatus(403);
+}
+
+const isCustomerHelper = (req, res, next) => {
+    return (req.isAuthenticated() && req.user.type === 'Customer')
 }
 
 /**
- * Middlware function.
+ * Middleware function.
  * 
  * @returns Forbidden if current session is not a manager. 
  */
@@ -130,6 +146,7 @@ const isManagerOrSelf = (req, res, next) => {
  * @returns Forbidden if current session is not an executive.  
  */
 const isExecutive = (req, res, next) => {
+    console.log(isExecutiveHelper(req, res, next));
     if (isExecutiveHelper(req, res, next)) return next();
     res.sendStatus(403);
 }
@@ -154,4 +171,4 @@ const isExecutiveOrSelf = (req, res, next) => {
     res.sendStatus(403);
 }
 
-module.exports = {verify, isAuthenticated, getUserType, isSelf, isManager, isManagerOrSelf, isExecutive, isExecutiveOrSelf, deserializeUser};
+module.exports = {verify, isAuthenticated, getUserType, isSelf, isCustomer, isManager, isManagerOrSelf, isExecutive, isExecutiveOrSelf, deserializeUser};
