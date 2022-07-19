@@ -35,26 +35,36 @@ const Comment = require('../models/Comment');
 /**
  * POST new comment, by a customer.
  * 
- * @param {String} _id - ObjectId of customer posting comment
+ * @param {String} replied_id - ObjectId of comment be replied to 
  * @param {String} comment - comment to be posted
  * @param {String} timestamp - timestamp of comment
  * 
- * Authorized Users: Customers
+ * Authorized Users: Customers, Managers, Executives
  */
+ router.post('/', authFunctions.isAuthenticated, async (req, res, next) => {
+    if ((req.body.replied_id !== undefined 
+        && !validator.isMongoId(req.body.replied_id))
+        || !validFunctions.isTimestamp(req.body.timestamp, 1)) {
+        return res.sendStatus(400);
+    }
 
- router.post('/customer', authFunctions.isCustomer, async (req, res, next) => {
-    if (!validator.isMongoId(req.body._id) || !validFunctions.isTimestamp(req.body.timestamp, 1)) {
-        res.sendStatus(400);
+    if (req.body.replied_id !== undefined && !authFunctions.isManagerOrSelf()) {
+        return res.sendStatus(401);
     }
 
     try {
         const newComment = await Comment.create({
-            commentor: req.body._id,
+            commentor: req.user._id,
             comment: req.body.comment,
-            commentTimestamp: new Date(req.body.timestamp)
+            commentTimestamp: new Date(req.body.timestamp),
+            repliedComment: req.body.replied_id ?? null
         });
 
-        const customer = await Customer.findOneAndUpdate({_id: req.body._id}, {$push: {comments: newComment._id}});
+        if (!req.body.replied_id) {
+            const repliedComment = await Comment.findOneAndUpdate({_id: req.body.replied_id}, {$set: {replyComment: newComment._id}})
+        }
+
+        const customer = await Customer.findOneAndUpdate({_id: req.user._id}, {$push: {comments: newComment._id}});
 
         res.status(201).json({'success': `Comment posted.`});
     } catch (err) {
@@ -78,7 +88,12 @@ const Comment = require('../models/Comment');
 /**
  * DELETE comment.
  * 
+ * @param {Object} filter Delete comments with given filter.
+ * 
  * Authorized Users: Customers, Managers, Executives
  */
+router.delete('/', authFunctions.isManagerOrSelf, validFunctions.isReqObjectStrict, (req, res, next) => {
+})
+
 
 module.exports = router;

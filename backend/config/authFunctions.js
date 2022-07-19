@@ -133,12 +133,16 @@ const isManagerHelper = (req, res, next) => {
 /**
  * Middleware function (usually for updating user data).
  *
+ * @returns {Boolean} result of method if (req, res, next) parameters are not passed in 
  * @returns Forbidden if current session is not a manager, executive, or owner of data being modified.
  */
-const isManagerOrSelf = (req, res, next) => {
+const isManagerOrSelf = (req = undefined, res = undefined, next = undefined) => {
+    if (!req && !res && !next) return isManagerHelper(req, res, next) || isSelfHelper(req, res, next);
     if (isManagerHelper(req, res, next) || isSelfHelper(req, res, next)) return next();
     res.sendStatus(403);
 }
+
+
 
 /**
  * Middleware function.
@@ -146,7 +150,6 @@ const isManagerOrSelf = (req, res, next) => {
  * @returns Forbidden if current session is not an executive.  
  */
 const isExecutive = (req, res, next) => {
-    console.log(isExecutiveHelper(req, res, next));
     if (isExecutiveHelper(req, res, next)) return next();
     res.sendStatus(403);
 }

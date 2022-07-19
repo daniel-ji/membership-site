@@ -85,25 +85,21 @@ router.get('/all', authFunctions.isManager, (req, res, next) => {
  * 
  * @param {String} _id - ObjectId of customer; required for updating self
  */
-router.patch('/', authFunctions.isManagerOrSelf, (req, res, next) => {
+router.patch('/', authFunctions.isManagerOrSelf, validFunctions.isReqObjectStrict, (req, res, next) => {
     if (!validFunctions.isValidCustomerUpdate(req.body)) {
         res.sendStatus(400)
     }
 
-    if (validFunctions.isObjectStrict(req.body.filter, req.body.update)) {
-        Customer.updateMany(req.body.filter, {$set: req.body.update}).exec().then(result => {
-            if (result.modifiedCount === 0) {
-                res.status(200).json({'info': `Updated 0 users.`})
-            } else {
-                res.status(200).json({'success': `Updated ${result.modifiedCount} user(s).`})
-            }
-        }).catch(err => {
-            console.log(err);
-            res.sendStatus(500);
-        })
-    } else {
-        res.sendStatus(400);
-    }
+    Customer.updateMany(req.body.filter, {$set: req.body.update}).exec().then(result => {
+        if (result.modifiedCount === 0) {
+            res.status(200).json({'info': `Updated 0 users.`})
+        } else {
+            res.status(200).json({'success': `Updated ${result.modifiedCount} user(s).`})
+        }
+    }).catch(err => {
+        console.log(err);
+        res.sendStatus(500);
+    })
 })
 
 /** 
@@ -159,21 +155,17 @@ router.post('/signup', async (req, res, next) => {
  * 
  * Authorized Users: Managers, Executives
  */
-router.delete('/delete', authFunctions.isManager, (req, res, next) => {
-    if (validFunctions.isObjectStrict(req.body.filter)) {
-        Customer.deleteMany(req.body.filter).exec().then(result => {
-            if (result.deletedCount === 0) {
-                res.status(202).json({'info': 'No customers deleted.'})
-            } else {
-                res.status(200).json({'success': `Deleted ${result.deletedCount} customer(s).`});
-            }
-        }).catch(err => {
-            console.log(err);
-            res.sendStatus(500);
-        });
-    } else {
-        res.sendStatus(400);
-    }
+router.delete('/delete', authFunctions.isManager, validFunctions.isReqObjectStrict, (req, res, next) => {
+    Customer.deleteMany(req.body.filter).exec().then(result => {
+        if (result.deletedCount === 0) {
+            res.status(202).json({'info': 'No customers deleted.'})
+        } else {
+            res.status(200).json({'success': `Deleted ${result.deletedCount} customer(s).`});
+        }
+    }).catch(err => {
+        console.log(err);
+        res.sendStatus(500);
+    });
 });
 
 module.exports = router;

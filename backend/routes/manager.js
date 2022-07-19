@@ -67,25 +67,21 @@ router.post('/create', authFunctions.isExecutive, async (req, res) => {
  * 
  * @param {String} _id - ObjectId of manager; required for updating self
  */
-router.patch('/', authFunctions.isExecutiveOrSelf, (req, res, next) => {
+router.patch('/', authFunctions.isExecutiveOrSelf, validFunctions.isReqObjectStrict, (req, res, next) => {
     if (!validFunctions.isValidManagerUpdate(req.body)) {
         res.sendStatus(400)
     }
 
-    if (validFunctions.isObjectStrict(req.body.filter, req.body.update)) {
-        Manager.updateMany(req.body.filter, {$set: req.body.update}).exec().then(result => {
-            if (result.modifiedCount === 0) {
-                res.status(200).json({'info': `Updated 0 users.`})
-            } else {
-                res.status(200).json({'success': `Updated ${result.modifiedCount} user(s).`})
-            }
-        }).catch(err => {
-            console.log(err);
-            res.sendStatus(500);
-        })
-    } else {
-        res.sendStatus(400);
-    }
+    Manager.updateMany(req.body.filter, {$set: req.body.update}).exec().then(result => {
+        if (result.modifiedCount === 0) {
+            res.status(200).json({'info': `Updated 0 users.`})
+        } else {
+            res.status(200).json({'success': `Updated ${result.modifiedCount} user(s).`})
+        }
+    }).catch(err => {
+        console.log(err);
+        res.sendStatus(500);
+    })
 })
 
 /**
@@ -93,21 +89,17 @@ router.patch('/', authFunctions.isExecutiveOrSelf, (req, res, next) => {
  * 
  * Authorized Users: Executives
  */
-router.delete('/delete', authFunctions.isExecutive, (req, res, next) => {
-    if (validFunctions.isObjectStrict(req.body.filter)) {
-        Manager.deleteMany(req.body.filter).exec().then(result => {
-            if (result.deletedCount === 0) {
-                res.status(202).json({'info': 'No managers deleted.'})
-            } else {
-                res.status(200).json({'success': `Deleted ${result.deletedCount} manager(s).`});
-            }
-        }).catch(err => {
-            console.log(err);
-            res.sendStatus(500);
-        });
-    } else {
-        res.sendStatus(400);
-    }
+router.delete('/delete', authFunctions.isExecutive, validFunctions.isReqObjectStrict, (req, res, next) => {
+    Manager.deleteMany(req.body.filter).exec().then(result => {
+        if (result.deletedCount === 0) {
+            res.status(202).json({'info': 'No managers deleted.'})
+        } else {
+            res.status(200).json({'success': `Deleted ${result.deletedCount} manager(s).`});
+        }
+    }).catch(err => {
+        console.log(err);
+        res.sendStatus(500);
+    });
 });
 
 module.exports = router;

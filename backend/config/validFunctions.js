@@ -9,18 +9,35 @@ const customerFields = ['name', 'phone', 'email', 'address', 'birthday', 'passwo
 // TODO: Remove executivePassword when done implementing executive
 const managerFields = ['name', 'phone', 'email', 'password', 'executivePassword'];
 
+const commonObjectStrictParams = ['filter', 'update']; 
+
 /**
  * Ensuring MongoDB filters and new data are valid objects.
+ * 
+ * @param {Array} values Array of values to check if each of them are valid objects.
+ * 
+ * @returns {Boolean} true if all objects are valid, otherwise false 
  */
 const isObjectStrict = (...values) => {
-    let result = true;
-    values.forEach(value => {
+    for (const value of values) {
         if (typeof value !== 'object' || Array.isArray(value) || value === null) {
-            result = false;
+            return false;
         }
-    })
-    return result;
+    }
+    return true;
 }
+
+/** 
+ * Middleware version of isObjectStrict, but for common req params 
+ */
+const isReqObjectStrict = (req, res, next) => {
+    for (const value of commonObjectStrictParams) {
+        if (req.body[value] !== undefined && !isObjectStrict(value)) {
+            return res.sendStatus(400); 
+        }
+    }
+    return next();
+} 
 
 /**
  * 
@@ -40,7 +57,7 @@ const isDate = (date, yearsBefore = 0) => {
  */
 const isTimestamp = (timestamp, minutesBefore) => {
     return moment(timestamp).isValid() 
-        && minutesBefore === -1 || moment(timestamp).isBefore(moment().subtract(minutesBefore, 'minutes'));
+        && (minutesBefore === -1 || moment(timestamp).isAfter(moment().subtract(minutesBefore, 'minutes')));
 }
 
 /**
@@ -104,4 +121,4 @@ const isValidManagerUpdate = (body) => {
         && body.name.length > 0 && body.name.length <= 100
 }
 
-module.exports = {isObjectStrict, isDate, isTimestamp, isValidCustomerReg, isValidCustomerUpdate, isValidManagerReg, isValidManagerUpdate};
+module.exports = {isObjectStrict, isReqObjectStrict, isDate, isTimestamp, isValidCustomerReg, isValidCustomerUpdate, isValidManagerReg, isValidManagerUpdate};
