@@ -8,8 +8,10 @@ const validator = require('validator');
 const customerFields = ['name', 'phone', 'email', 'address', 'birthday', 'password', 'username'];
 // TODO: Remove executivePassword when done implementing executive
 const managerFields = ['name', 'phone', 'email', 'password', 'executivePassword'];
-
 const commonObjectStrictParams = ['filter', 'update']; 
+
+const Comment = require('../models/Comment');
+const authFunctions = require('./authFunctions');
 
 /**
  * Ensuring MongoDB filters and new data are valid objects.
@@ -32,7 +34,7 @@ const isObjectStrict = (...values) => {
  */
 const isReqObjectStrict = (req, res, next) => {
     for (const value of commonObjectStrictParams) {
-        if (req.body[value] !== undefined && !isObjectStrict(value)) {
+        if (req.body[value] !== undefined && !isObjectStrict(req.body[value])) {
             return res.sendStatus(400); 
         }
     }
@@ -55,9 +57,11 @@ const isDate = (date, yearsBefore = 0) => {
  * @param {String} date Timestamp (Date) in toISOString() format
  * @returns {Boolean} true if timestamp is valid, false otherwise
  */
-const isTimestamp = (timestamp, minutesBefore) => {
+const isTimestamp = (timestamp, minutesTolerance = -1) => {
     return moment(timestamp).isValid() 
-        && (minutesBefore === -1 || moment(timestamp).isAfter(moment().subtract(minutesBefore, 'minutes')));
+        && (minutesTolerance === -1 
+            || (moment(timestamp).isAfter(moment().subtract(minutesTolerance, 'minutes')) 
+                && moment(timestamp).isBefore(moment().add(minutesTolerance, 'minutes'))));
 }
 
 /**
@@ -121,4 +125,32 @@ const isValidManagerUpdate = (body) => {
         && body.name.length > 0 && body.name.length <= 100
 }
 
-module.exports = {isObjectStrict, isReqObjectStrict, isDate, isTimestamp, isValidCustomerReg, isValidCustomerUpdate, isValidManagerReg, isValidManagerUpdate};
+/**
+ * 
+ * @returns Bad Request if data is not proper comment POST request.
+ */
+const isValidComment = async (req, res, next) => {
+    try {
+        if (isTimestamp(req.body.timestamp, 2)) {
+            if (req.body.replied_id === undefined) {
+                return next();
+            } else if (validator.isMongoId(req.body.replied_id) && (await Comment.find({_id: req.body.replied_id}).limit(1))[0]._id !== undefined) {
+                if (authFunctions.isManagerHelper(req, res, next)) {
+                    return next();
+                } else {
+                    console.log(await Comment.findOne({_id: req.body.replied_id}))
+                    if (await Comment.findOne({_id: req.body.replied_id}).commentor === req.user._id) {
+                        return next();
+                    }
+                }
+            }
+        }
+        return res.sendStatus(400);
+    } catch (err) {
+        console.log(err)
+        res.sendStatus(500);
+    }
+
+}
+
+module.exports = {isObjectStrict, isReqObjectStrict, isDate, isTimestamp, isValidCustomerReg, isValidCustomerUpdate, isValidManagerReg, isValidManagerUpdate, isValidComment};

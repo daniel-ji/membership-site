@@ -41,17 +41,7 @@ const Comment = require('../models/Comment');
  * 
  * Authorized Users: Customers, Managers, Executives
  */
- router.post('/', authFunctions.isAuthenticated, async (req, res, next) => {
-    if ((req.body.replied_id !== undefined 
-        && !validator.isMongoId(req.body.replied_id))
-        || !validFunctions.isTimestamp(req.body.timestamp, 1)) {
-        return res.sendStatus(400);
-    }
-
-    if (req.body.replied_id !== undefined && !authFunctions.isManagerOrSelf()) {
-        return res.sendStatus(401);
-    }
-
+ router.post('/', authFunctions.isAuthenticated, validFunctions.isValidComment, async (req, res, next) => {
     try {
         const newComment = await Comment.create({
             commentor: req.user._id,
@@ -72,13 +62,6 @@ const Comment = require('../models/Comment');
         res.sendStatus(500);
     }
 })
-
-/**
- * POST a reply to the comment.
- * 
- * Authorized Users: Managers, Executives
- */
-
 /**
  * PATCH (edit) comment.
  * 
@@ -90,10 +73,37 @@ const Comment = require('../models/Comment');
  * 
  * @param {Object} filter Delete comments with given filter.
  * 
- * Authorized Users: Customers, Managers, Executives
+ * Authorized Users: Self, Managers, Executives
  */
 router.delete('/', authFunctions.isManagerOrSelf, validFunctions.isReqObjectStrict, (req, res, next) => {
+    Comment.updateMany(req.body.filter, {$set: {deleted: true}}).exec().then(result => {
+        if (result.modifiedCount === 0) {
+            res.status(202).json({'info': 'No comments deleted.'})
+        } else {
+            res.status(200).json({'success': `Deleted ${result.modifiedCount} comment(s).`});
+        }
+    }).catch(err => {
+        console.log(err)
+        res.sendStatus(500);
+    })
 })
 
+/**
+ * DELETE comment permanently. See regular DELETE. 
+ * 
+ * Authorized Users: Managers, Executives
+ */
+router.delete('/permanent', authFunctions.isManager, validFunctions.isReqObjectStrict, (req, res, next) => {
+    Comment.deleteMany(req.body.filter).exec().then(result => {
+        if (result.deletedCount === 0) {
+            res.status(202).json({'info': 'No comments permanently deleted.'})
+        } else {
+            res.status(200).json({'success': `Deleted ${result.deletedCount} comment(s) permanently.`});
+        }
+    }).catch(err => {
+        console.log(err)
+        res.sendStatus(500);
+    })
+})
 
 module.exports = router;

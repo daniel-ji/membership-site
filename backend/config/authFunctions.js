@@ -133,11 +133,13 @@ const isManagerHelper = (req, res, next) => {
 /**
  * Middleware function (usually for updating user data).
  *
- * @returns {Boolean} result of method if (req, res, next) parameters are not passed in 
+ * @param returnBoolean option to return a boolean instead of act as middleware
+ * 
+ * @returns {Boolean} result of method if returnBoolean is true
  * @returns Forbidden if current session is not a manager, executive, or owner of data being modified.
  */
-const isManagerOrSelf = (req = undefined, res = undefined, next = undefined) => {
-    if (!req && !res && !next) return isManagerHelper(req, res, next) || isSelfHelper(req, res, next);
+const isManagerOrSelf = (req, res, next, returnBoolean = false) => {
+    if (returnBoolean) return isManagerHelper(req, res, next) || isSelfHelper(req, res, next);
     if (isManagerHelper(req, res, next) || isSelfHelper(req, res, next)) return next();
     res.sendStatus(403);
 }
@@ -174,4 +176,4 @@ const isExecutiveOrSelf = (req, res, next) => {
     res.sendStatus(403);
 }
 
-module.exports = {verify, isAuthenticated, getUserType, isSelf, isCustomer, isManager, isManagerOrSelf, isExecutive, isExecutiveOrSelf, deserializeUser};
+module.exports = {verify, isAuthenticated, getUserType, isSelf, isCustomer, isManager, isManagerHelper, isManagerOrSelf, isExecutive, isExecutiveOrSelf, deserializeUser};
