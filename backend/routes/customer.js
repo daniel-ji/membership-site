@@ -87,7 +87,7 @@ router.get('/all', authFunctions.isManager, (req, res, next) => {
  */
 router.patch('/', authFunctions.isManagerOrSelf, validFunctions.isReqObjectStrict, (req, res, next) => {
     if (!validFunctions.isValidCustomerUpdate(req.body)) {
-        res.sendStatus(400)
+        return res.sendStatus(400);
     }
 
     Customer.updateMany(req.body.filter, {$set: req.body.update}).exec().then(result => {

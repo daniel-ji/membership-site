@@ -69,7 +69,7 @@ router.post('/create', authFunctions.isExecutive, async (req, res) => {
  */
 router.patch('/', authFunctions.isExecutiveOrSelf, validFunctions.isReqObjectStrict, (req, res, next) => {
     if (!validFunctions.isValidManagerUpdate(req.body)) {
-        res.sendStatus(400)
+        return res.sendStatus(400);
     }
 
     Manager.updateMany(req.body.filter, {$set: req.body.update}).exec().then(result => {

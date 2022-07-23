@@ -42,31 +42,50 @@ const Comment = require('../models/Comment');
  * Authorized Users: Customers, Managers, Executives
  */
  router.post('/', authFunctions.isAuthenticated, validFunctions.isValidComment, async (req, res, next) => {
+    addCommentHelper(req, res, next);
+})
+
+/**
+ * PATCH (edit) comment. See POST comment.
+ * One addditional parameter:
+ * 
+ * @param {String} previous_id - ObjectId of comment that is being edited
+ * 
+ * Authorized Users: Self
+ */
+router.patch('/', authFunctions.isSelf, validFunctions.isValidComment, (req, res, next) => {
+    addCommentHelper(req, res, next);
+})
+
+const addCommentHelper = (req, res, next) => {
+    // TODO: editing a reply & retaining the repliedComment and making it logically working
+    // frontend had to pass in repliedComment again
     try {
-        const newComment = await Comment.create({
+        const comment = await Comment.create({
             commentor: req.user._id,
             comment: req.body.comment,
             commentTimestamp: new Date(req.body.timestamp),
-            repliedComment: req.body.replied_id ?? null
+            repliedComment: req.body.replied_id ?? null,
+            previousComment: req.body.previous_id ?? null
         });
 
         if (!req.body.replied_id) {
-            const repliedComment = await Comment.findOneAndUpdate({_id: req.body.replied_id}, {$set: {replyComment: newComment._id}})
+            const repliedComment = await Comment.findOneAndUpdate({_id: req.body.replied_id}, {$set: {replyComment: comment._id}})
         }
 
-        const customer = await Customer.findOneAndUpdate({_id: req.user._id}, {$push: {comments: newComment._id}});
+        // TODO: implement previous_id
+        if (!req.body.previous_id) {
+            const previousComment = await Comment.findOneAndUpdate({_id: req.body.previous_id}, {$set: {newComment: comment._id}})
+        }
+
+        const customer = await Customer.findOneAndUpdate({_id: req.user._id}, {$push: {comments: comment._id}});
 
         res.status(201).json({'success': `Comment posted.`});
     } catch (err) {
         console.log(err);
         res.sendStatus(500);
     }
-})
-/**
- * PATCH (edit) comment.
- * 
- * Authorized Users: Self
- */
+}
 
 /**
  * DELETE comment.

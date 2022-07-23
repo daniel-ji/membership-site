@@ -8,6 +8,7 @@ const validator = require('validator');
 const customerFields = ['name', 'phone', 'email', 'address', 'birthday', 'password', 'username'];
 // TODO: Remove executivePassword when done implementing executive
 const managerFields = ['name', 'phone', 'email', 'password', 'executivePassword'];
+const commentFields = ['_id', 'replied_id', 'comment', 'timestamp', 'previous_id'];
 const commonObjectStrictParams = ['filter', 'update']; 
 
 const Comment = require('../models/Comment');
@@ -130,22 +131,58 @@ const isValidManagerUpdate = (body) => {
  * @returns Bad Request if data is not proper comment POST request.
  */
 const isValidComment = async (req, res, next) => {
+    if (!containsAllowedFields(req.body, commentFields)) {
+        return res.sendStatus(400);
+    }
+
+    // TODO: Test replied_id and previous_id validation
     try {
+        let valid = true;
+
         if (isTimestamp(req.body.timestamp, 2)) {
-            if (req.body.replied_id === undefined) {
-                return next();
-            } else if (validator.isMongoId(req.body.replied_id) && (await Comment.find({_id: req.body.replied_id}).limit(1))[0]._id !== undefined) {
-                if (authFunctions.isManagerHelper(req, res, next)) {
-                    return next();
-                } else {
-                    console.log(await Comment.findOne({_id: req.body.replied_id}))
-                    if (await Comment.findOne({_id: req.body.replied_id}).commentor === req.user._id) {
-                        return next();
+            if (req.body.replied_id !== undefined) {
+                // do nothing
+            } else {
+                if (validator.isMongoId(req.body.replied_id) && (await Comment.find({_id: req.body.replied_id}).limit(1))[0]._id !== undefined) {
+                    if (!authFunctions.isManagerHelper(req, res, next)) {
+                        if (await Comment.findOne({_id: req.body.replied_id}).commentor !== req.user._id) {
+                            valid = false;
+                        }
+                    } else {
+                        valid = false;
                     }
+                } else {
+                    valid = false;
+                }   
+            }
+
+            // previous id is valid if comment exists, doesn't already have a next comment,
+            // commentors are the same, which is equal to current user 
+            if (req.body.previous_id !== undefined) {
+                // do nothing
+            } else {
+                if (validator.isMongoId(req.body.previous_id)) {
+                    const previousComment = await Comment.find({_id: req.body.previous_id}).limit(1)[0];
+                    // TODO: does the null check work? 
+                    if (previousComment._id !== undefined && previousComment.newComment === null 
+                        && previousComment.commentor === req.user._id) {
+                        // do nothing
+                    } else {
+                        valid = false;
+                    }
+                } else {
+                    valid = false;
                 }
             }
+        } else {
+            valid = false;
         }
-        return res.sendStatus(400);
+
+        if (valid) {
+            return next();
+        } else {
+            return res.sendStatus(400);
+        }
     } catch (err) {
         console.log(err)
         res.sendStatus(500);
