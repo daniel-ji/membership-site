@@ -39,8 +39,6 @@ const customerSchema = new Schema({
     preferences: [String],
     // Still need to figure out how the data structure is set up 
     transactionHistory: [Schema.Types.ObjectId],
-    // Possibly: array of objects, each object has comment (String), reply (String), comment date (String), reply date (String)
-    comments: [Schema.Types.ObjectId],
     credits: {
         type: Number,
         default: 0

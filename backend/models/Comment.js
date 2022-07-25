@@ -14,14 +14,18 @@ const commentSchema = new Schema({
         type: String,
         required: true,
     },
+    // TODO: implement in routes 
+    originalCommentor: Schema.Types.ObjectId,
     // previous commment
     previousComment: Schema.Types.ObjectId,
     // updated comment
     newComment: Schema.Types.ObjectId,
     // comment that this comment is a reply to
     repliedComment: Schema.Types.ObjectId,
+    // comment that this comment originally replies to
+    originalRepliedComment: Schema.Types.ObjectId,
     // comment that replies to this comment
-    replyComment: Schema.Types.ObjectId,
+    replyComments: [Schema.Types.ObjectId],
     // possible issue: should be inserting the replier, reply, and timestap field at the same time
     deleted: {
         type: Boolean,

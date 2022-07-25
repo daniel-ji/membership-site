@@ -5,10 +5,11 @@
 const moment = require('moment');
 const validator = require('validator');
 
-const customerFields = ['name', 'phone', 'email', 'address', 'birthday', 'password', 'username'];
+// TODO: replace comments back with preferences
+const customerFields = ['name', 'phone', 'email', 'address', 'birthday', 'password', 'username', 'comments'];
 // TODO: Remove executivePassword when done implementing executive
 const managerFields = ['name', 'phone', 'email', 'password', 'executivePassword'];
-const commentFields = ['_id', 'replied_id', 'comment', 'timestamp', 'previous_id'];
+const commentFields = ['replied_id', 'comment', 'timestamp', 'previous_id'];
 const commonObjectStrictParams = ['filter', 'update']; 
 
 const Comment = require('../models/Comment');
@@ -89,7 +90,8 @@ const containsAllowedFields = (body, whitelist) => {
  */
 const isValidCustomerReg = (body) => {
     return body.username === body.email 
-        && Object.keys(body).length === customerFields.length
+        && Object.keys(body).length === customerFields.length - 1
+        && body.preferences === undefined
         && isValidCustomerUpdate(body)
 }
 
@@ -99,12 +101,12 @@ const isValidCustomerReg = (body) => {
  */
 const isValidCustomerUpdate = (body) => {
     return containsAllowedFields(body, customerFields) 
-        && isDate(body.birthday, 18)
-        && validator.isEmail(body.email)
-        && validator.isMobilePhone(body.phone)
-        && validator.isStrongPassword(body.password, {minSymbols: 0})
-        && body.name.length > 0 && body.name.length <= 100
-        && body.address.length > 0 && body.address.length <= 200;
+        && (!body.birthday || isDate(body.birthday, 18))
+        && (!body.email || validator.isEmail(body.email))
+        && (!body.phone || validator.isMobilePhone(body.phone))
+        && (!body.password || validator.isStrongPassword(body.password, {minSymbols: 0}))
+        && (!body.name || body.name.length > 0 && body.name.length <= 100)
+        && (!body.address || body.address.length > 0 && body.address.length <= 200);
 }
 
 /**
@@ -120,10 +122,10 @@ const isValidManagerReg = (body) => {
  */
 const isValidManagerUpdate = (body) => {
     return containsAllowedFields(body, managerFields)
-        && validator.isEmail(body.email)
-        && validator.isMobilePhone(body.phone)
-        && validator.isStrongPassword(body.password)
-        && body.name.length > 0 && body.name.length <= 100
+        && (!body.email || validator.isEmail(body.email))
+        && (!body.phone || validator.isMobilePhone(body.phone))
+        && (!body.password || validator.isStrongPassword(body.password))
+        && (!body.name || body.name.length > 0 && body.name.length <= 100)
 }
 
 /**
@@ -139,16 +141,19 @@ const isValidComment = async (req, res, next) => {
     try {
         let valid = true;
 
-        if (isTimestamp(req.body.timestamp, 2)) {
-            if (req.body.replied_id !== undefined) {
+        // TODO: change after
+        if (isTimestamp(req.body.timestamp, 15)) {
+            if (req.body.replied_id === undefined) {
                 // do nothing
+            } else if (req.body.previous_id !== undefined) { 
+                // cant be passing in both, doesn't make sense
+                valid = false;
             } else {
-                if (validator.isMongoId(req.body.replied_id) && (await Comment.find({_id: req.body.replied_id}).limit(1))[0]._id !== undefined) {
-                    if (!authFunctions.isManagerHelper(req, res, next)) {
-                        if (await Comment.findOne({_id: req.body.replied_id}).commentor !== req.user._id) {
-                            valid = false;
-                        }
-                    } else {
+                if (validator.isMongoId(req.body.replied_id)) {
+                    const repliedComment = (await Comment.find({_id: req.body.replied_id}).limit(1))[0];
+                    if (repliedComment === undefined || repliedComment.deleted 
+                        || (!authFunctions.isManagerHelper(req, res, next) 
+                            && !(await Comment.findOne({_id: req.body.replied_id})).commentor.equals(req.user._id))) {
                         valid = false;
                     }
                 } else {
@@ -158,16 +163,19 @@ const isValidComment = async (req, res, next) => {
 
             // previous id is valid if comment exists, doesn't already have a next comment,
             // commentors are the same, which is equal to current user 
-            if (req.body.previous_id !== undefined) {
+            if (req.body.previous_id === undefined || !valid) {
                 // do nothing
             } else {
                 if (validator.isMongoId(req.body.previous_id)) {
-                    const previousComment = await Comment.find({_id: req.body.previous_id}).limit(1)[0];
-                    // TODO: does the null check work? 
-                    if (previousComment._id !== undefined && previousComment.newComment === null 
-                        && previousComment.commentor === req.user._id) {
+                    // if can't find, returns ... TODO: figure out
+                    const previousComment = (await Comment.find({_id: req.body.previous_id}).limit(1))[0];
+                    if (previousComment !== undefined && !previousComment.deleted && !previousComment.newComment 
+                        && previousComment.commentor.equals(req.user._id)) {
                         // do nothing
                     } else {
+                        if (!previousComment.commentor.equals(req.user._id)) {
+                            return res.sendStatus(403);
+                        }
                         valid = false;
                     }
                 } else {

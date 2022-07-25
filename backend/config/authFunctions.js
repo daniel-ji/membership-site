@@ -96,7 +96,7 @@ const isSelf = (req, res, next) => {
  * @returns {Boolean} true if user is the owner of the data being modified.
  */
 const isSelfHelper = (req, res, next) => {
-    return req.isAuthenticated() && (req.user._id.toString() === req.params.id ?? req.body?._id)
+    return req.isAuthenticated() && (req.user._id.toString() === (req.params.id ?? req.body?._id ?? req.body.filter._id))
 }
 
 /** Middleware function. 

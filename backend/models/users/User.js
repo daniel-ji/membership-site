@@ -26,16 +26,17 @@ const userSchema = new Schema({
         type: String,
         required: true,
     },
+    // TODO: test if this.email !== null or !== undefined
     phone: {
         type: String,
-        required: () => {return this.email !== null},
+        required: () => {return this.email !== undefined},
         validate: [val => {
             return validator.isMobilePhone(val);
         }, 'Invalid phone number']
     }, 
     email: {
         type: String, 
-        required: () => {return this.phone !== null},
+        required: () => {return this.phone !== undefined},
         validate: [val => {
             return validator.isEmail(val);
         }, 'Invalid email']
@@ -49,6 +50,7 @@ const userSchema = new Schema({
         type: [Schema.Types.ObjectId],
         select: false,
     },
+    comments: [Schema.Types.ObjectId],
 })
 
 module.exports = mongoose.model('User', userSchema);

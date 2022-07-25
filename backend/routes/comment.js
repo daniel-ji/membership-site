@@ -23,7 +23,8 @@ const Comment = require('../models/Comment');
  * 
  * Authorized Users: Managers, Executives
  */
- router.get('/all-comments', authFunctions.isManager, (req, res, next) => {
+// TODO: Add back authFunctions.isManager
+ router.get('/all-comments', (req, res, next) => {
     Comment.find({}).exec().then(result => {
         res.status(200).json(result);
     }).catch(err => {
@@ -31,6 +32,12 @@ const Comment = require('../models/Comment');
         res.sendStatus(500);
     })
 })
+
+/**
+ * GET comments specified in filter (a list of ObjectIDs).
+ * 
+ * Authorized Users: Self, Managers, Executives 
+ */
 
 /**
  * POST new comment, by a customer.
@@ -53,32 +60,44 @@ const Comment = require('../models/Comment');
  * 
  * Authorized Users: Self
  */
-router.patch('/', authFunctions.isSelf, validFunctions.isValidComment, (req, res, next) => {
+router.patch('/', authFunctions.isAuthenticated, validFunctions.isValidComment, async (req, res, next) => {
     addCommentHelper(req, res, next);
 })
 
-const addCommentHelper = (req, res, next) => {
+const addCommentHelper = async (req, res, next) => {
     // TODO: editing a reply & retaining the repliedComment and making it logically working
     // frontend had to pass in repliedComment again
+
+    // TODO: does originalCommentor even work? 
     try {
         const comment = await Comment.create({
             commentor: req.user._id,
             comment: req.body.comment,
             commentTimestamp: new Date(req.body.timestamp),
-            repliedComment: req.body.replied_id ?? null,
-            previousComment: req.body.previous_id ?? null
+            repliedComment: req.body.replied_id 
+                ?? (req.body.previous_id === undefined ? req.body.replied_id : (await Comment.findOne({_id: req.body.previous_id})).repliedComment),
+            originalRepliedComment: req.body.replied_id,
+            replyComments: req.body.previous_id ? (await Comment.findOne({_id: req.body.previous_id})).replyComments : [],
+            previousComment: req.body.previous_id ?? undefined,
+            originalCommentor: req.body.replied_id ? (await Comment.findOne({_id: req.body.replied_id})).originalCommentor : req.user._id
         });
 
-        if (!req.body.replied_id) {
-            const repliedComment = await Comment.findOneAndUpdate({_id: req.body.replied_id}, {$set: {replyComment: comment._id}})
+        // we want to push the new comment to the reply comments if it's either a reply or an edit 
+
+        if (req.body.replied_id !== undefined) {
+            const repliedComment = await Comment.findOneAndUpdate({_id: req.body.replied_id}, {$push: {replyComments: comment._id}})
         }
 
-        // TODO: implement previous_id
-        if (!req.body.previous_id) {
-            const previousComment = await Comment.findOneAndUpdate({_id: req.body.previous_id}, {$set: {newComment: comment._id}})
+        if (req.body.previous_id !== undefined) {
+            const previousComment = await Comment.findOneAndUpdate({_id: req.body.previous_id}, {$set: {newComment: comment._id, deleted: true}})
+            // we also want to pull the previous reply ObjectId from the replyComments of the repliedComment
+            const repliedCommentId = (await Comment.findOne({_id: req.body.previous_id})).repliedComment;
+            let repliedComment = await Comment.findOneAndUpdate({_id: repliedCommentId}, {$push: {replyComments: comment._id}})
+            repliedComment = await Comment.findOneAndUpdate({_id: repliedCommentId}, {$pull: {replyComments: previousComment._id}})
+            // for every replyComments, switch the repliedComment 
         }
 
-        const customer = await Customer.findOneAndUpdate({_id: req.user._id}, {$push: {comments: comment._id}});
+        const user = await authFunctions.getUserType(req.user.type).findOneAndUpdate({_id: req.user._id}, {$push: {comments: comment._id}});
 
         res.status(201).json({'success': `Comment posted.`});
     } catch (err) {
@@ -110,7 +129,7 @@ router.delete('/', authFunctions.isManagerOrSelf, validFunctions.isReqObjectStri
 /**
  * DELETE comment permanently. See regular DELETE. 
  * 
- * Authorized Users: Managers, Executives
+ * Authorized Users: No one? (For dev purposes only)
  */
 router.delete('/permanent', authFunctions.isManager, validFunctions.isReqObjectStrict, (req, res, next) => {
     Comment.deleteMany(req.body.filter).exec().then(result => {

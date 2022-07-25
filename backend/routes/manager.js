@@ -46,10 +46,10 @@ router.post('/create', authFunctions.isExecutive, async (req, res) => {
             password: hashedPw,
         })
 
-        if (await Manager.findOne({username: req.body.email}).exec()) {
+        if (await Manager.findOne({username: req.body.email})) {
             return res.status(409).json({'error': 'Email already exists'});
         }
-        if (await Manager.findOne({phone: req.body.phone}).exec()) {
+        if (await Manager.findOne({phone: req.body.phone})) {
             return res.status(409).json({'error': 'Phone number already exists'});
         }
 

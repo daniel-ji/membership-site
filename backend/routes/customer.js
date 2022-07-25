@@ -86,7 +86,7 @@ router.get('/all', authFunctions.isManager, (req, res, next) => {
  * @param {String} _id - ObjectId of customer; required for updating self
  */
 router.patch('/', authFunctions.isManagerOrSelf, validFunctions.isReqObjectStrict, (req, res, next) => {
-    if (!validFunctions.isValidCustomerUpdate(req.body)) {
+    if (!validFunctions.isValidCustomerUpdate(req.body.update)) {
         return res.sendStatus(400);
     }
 
@@ -115,10 +115,10 @@ router.post('/signup', async (req, res, next) => {
     try {
         const hashedPw = await bcrypt.hash(req.body.password, 10);
 
-        if (await Customer.findOne({username: req.body.email}).exec()) {
+        if (await Customer.findOne({username: req.body.email})) {
             return res.status(409).json({'error': 'Email already exists'});
         }
-        if (await Customer.findOne({phone: req.body.phone}).exec()) {
+        if (await Customer.findOne({phone: req.body.phone})) {
             return res.status(409).json({'error': 'Phone number already exists'});
         }
 
@@ -153,9 +153,9 @@ router.post('/signup', async (req, res, next) => {
 /** 
  * DELETE customers.
  * 
- * Authorized Users: Managers, Executives
+ * Authorized Users: Self, Managers, Executives
  */
-router.delete('/delete', authFunctions.isManager, validFunctions.isReqObjectStrict, (req, res, next) => {
+router.delete('/delete', authFunctions.isManagerOrSelf, validFunctions.isReqObjectStrict, (req, res, next) => {
     Customer.deleteMany(req.body.filter).exec().then(result => {
         if (result.deletedCount === 0) {
             res.status(202).json({'info': 'No customers deleted.'})
