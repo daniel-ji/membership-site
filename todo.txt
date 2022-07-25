@@ -1,0 +1,26 @@
+overall
+- ctrl-f TODOs throughout codebase
+
+backend
+- fix comments (test-comment-arrays)
+- executive account
+- customer: calculate distance from nearest shop with bing maps api or something like that
+- promotions
+- invite feature
+- audit logs
+- cookie-session
+- rate-limiting
+- providing just enough data on routes
+
+frontend
+- customer dashboard (lots of features within, will flesh out later)
+- manager dashboard (lots of features within, will flesh out later)
+- better html verify email
+- some more i'm probably forgetting
+
+devops
+- get a domain running
+- update code with domain
+- deploy
+- make sure emails dont go to spam
+
