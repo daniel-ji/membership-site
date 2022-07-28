@@ -7,8 +7,7 @@ const validator = require('validator');
 
 // TODO: replace comments back with preferences
 const customerFields = ['name', 'phone', 'email', 'address', 'birthday', 'password', 'username', 'comments'];
-// TODO: Remove executivePassword when done implementing executive
-const managerFields = ['name', 'phone', 'email', 'password', 'executivePassword'];
+const managerFields = ['name', 'phone', 'email', 'password'];
 const commentFields = ['replied_id', 'comment', 'timestamp', '_id'];
 const commonObjectStrictParams = ['filter', 'update']; 
 
@@ -132,18 +131,15 @@ const isValidManagerUpdate = (body) => {
  * 
  * @returns Bad Request if data is not proper comment POST request.
  */
-// TODO: redo validation for comment arrays
 const isValidComment = async (req, res, next) => {
     if (!containsAllowedFields(req.body, commentFields)) {
         return res.sendStatus(400);
     }
 
-    // TODO: Test replied_id and _id validation
     try {
         let valid = true;
 
-        // TODO: change after
-        if (isTimestamp(req.body.timestamp, 15)) {
+        if (isTimestamp(req.body.timestamp, 2)) {
             if (req.body.replied_id === undefined) {
                 // do nothing
             } else if (req.body._id !== undefined) { 

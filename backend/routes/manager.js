@@ -38,6 +38,13 @@ router.post('/create', authFunctions.isExecutive, async (req, res) => {
     try {
         const hashedPw = await bcrypt.hash(req.body.password, 10);
 
+        if (await Manager.findOne({username: req.body.email})) {
+            return res.status(409).json({'error': 'Email already exists'});
+        }
+        if (await Manager.findOne({phone: req.body.phone})) {
+            return res.status(409).json({'error': 'Phone number already exists'});
+        }
+
         const newManager = await Manager.create({
             name: req.body.name,
             phone: req.body.phone,
@@ -45,13 +52,6 @@ router.post('/create', authFunctions.isExecutive, async (req, res) => {
             email: req.body.email,
             password: hashedPw,
         })
-
-        if (await Manager.findOne({username: req.body.email})) {
-            return res.status(409).json({'error': 'Email already exists'});
-        }
-        if (await Manager.findOne({phone: req.body.phone})) {
-            return res.status(409).json({'error': 'Phone number already exists'});
-        }
 
         res.status(201).json({'success': 'Manager created.'});
     } catch (err) {

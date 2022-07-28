@@ -2,11 +2,12 @@ overall
 - ctrl-f TODOs throughout codebase
 
 backend
-- fix comments (test-comment-arrays)
-- executive account
+- fix comments (test-comment-arrays) (done)
+- executive account (add 2fa?)
 - customer: calculate distance from nearest shop with bing maps api or something like that
 - promotions
 - invite feature
+
 - audit logs
 - cookie-session
 - rate-limiting

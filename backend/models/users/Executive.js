@@ -15,6 +15,10 @@ const executiveSchema = new Schema({
         type: String,
         default: 'Executive',
         immutable: true,
+    },
+    active: {
+        type: Boolean,
+        default: true,
     }
 })
 

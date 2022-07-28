@@ -38,16 +38,12 @@ const verify = (req, username, password, done) => {
  * @param {String} id MongoDB user id 
  * @param {Callback} done 
  */
- const deserializeUser = (id, done) => {
-    Customer.findById(id, (err, user) => {
-        if (user !== null) {
-            done(err, user);
-        } else {
-            Manager.findById(id, (err, user) => {
-                done(err, user);
-            })
-        }
-    })
+ const deserializeUser = async (id, done) => {
+    const customer = await Customer.findById(id);
+    const manager = await Manager.findById(id);
+    const executive = await Executive.findById(id);
+    const user = customer ?? manager ?? executive;
+    done(user === null ? Error('Internal Server Error') : null, user);
 }
 
 /**
@@ -77,7 +73,7 @@ const verify = (req, username, password, done) => {
  * @returns Unauthorized if user is not authenticated
  */
 const isAuthenticated = (req, res, next) => {
-    if (req.isAuthenticated()) return next();
+    if (req.isAuthenticated() && req.user.active) return next();
     res.sendStatus(401);
 }
 
@@ -160,10 +156,8 @@ const isExecutive = (req, res, next) => {
  * 
  * @returns {Boolean} true if user is an executive.
  */
-// TODO: Remove EXECUTIVE_PASSWORD from here after implementing executive
 const isExecutiveHelper = (req, res, next) => {
-    return (req.isAuthenticated() && (req.user.type === 'Executive' 
-    || req.body.executivePassword === process.env.EXECUTIVE_PASSWORD))
+    return (req.isAuthenticated() && (req.user.type === 'Executive'))
 }
 
 /**
@@ -176,4 +170,18 @@ const isExecutiveOrSelf = (req, res, next) => {
     res.sendStatus(403);
 }
 
-module.exports = {verify, isAuthenticated, getUserType, isSelf, isCustomer, isManager, isManagerHelper, isManagerOrSelf, isExecutive, isExecutiveOrSelf, deserializeUser};
+/**
+ * Middleware function.
+ * 
+ * @returns Forbidden if current session is not an executive or dev.
+ */
+const isExecutiveOrDev = (req, res, next) => {
+    if (isExecutiveHelper(req, res, next) || isDev(req, res, next)) return next();
+    res.sendStatus(403);
+}
+
+const isDev = (req, res, next) => {
+    return (req.body.devPassword !== process.env.DEV_PASSWORD)
+}
+
+module.exports = {verify, isAuthenticated, getUserType, isSelf, isCustomer, isManager, isManagerHelper, isManagerOrSelf, isExecutive, isExecutiveOrSelf, isExecutiveOrDev, deserializeUser};

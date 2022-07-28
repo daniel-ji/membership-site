@@ -14,7 +14,6 @@ const commentSchema = new Schema({
         type: [Date],
         required: true,
     },
-    // TODO: implement in routes 
     originalCommentor: Schema.Types.ObjectId,
     // comment that this comment is a reply to
     repliedComment: Schema.Types.ObjectId,

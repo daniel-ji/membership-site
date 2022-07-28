@@ -65,11 +65,10 @@ router.patch('/', authFunctions.isAuthenticated, validFunctions.isValidComment, 
     addCommentHelper(req, res, next);
 })
 
+/**
+ * Helper function for editing and posting comments (since they're somewhat similar)
+ */
 const addCommentHelper = async (req, res, next) => {
-    // TODO: editing a reply & retaining the repliedComment and making it logically working
-    // frontend had to pass in repliedComment again
-
-    // TODO: does originalCommentor even work? 
     try { 
         if (req.body._id !== undefined) {
             const comment = await Comment.findOneAndUpdate({_id: req.body._id}, {$push: {comment: req.body.comment, commentTimestamp: req.body.timestamp}})
