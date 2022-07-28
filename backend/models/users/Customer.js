@@ -30,7 +30,7 @@ const customerSchema = new Schema({
         }, 'Invalid address']
     }, 
     birthday: {
-        type: String,
+        type: Date,
         validate: [val => {
             return moment(val, 'E MMM dd yyyy').isValid() && moment(val, 'E MMM dd yyyy').isBefore(moment().subtract(18, 'years'));
         }, 'Invalid birthday'],

@@ -9,7 +9,7 @@ const validator = require('validator');
 const customerFields = ['name', 'phone', 'email', 'address', 'birthday', 'password', 'username', 'comments'];
 // TODO: Remove executivePassword when done implementing executive
 const managerFields = ['name', 'phone', 'email', 'password', 'executivePassword'];
-const commentFields = ['replied_id', 'comment', 'timestamp', 'previous_id'];
+const commentFields = ['replied_id', 'comment', 'timestamp', '_id'];
 const commonObjectStrictParams = ['filter', 'update']; 
 
 const Comment = require('../models/Comment');
@@ -132,12 +132,13 @@ const isValidManagerUpdate = (body) => {
  * 
  * @returns Bad Request if data is not proper comment POST request.
  */
+// TODO: redo validation for comment arrays
 const isValidComment = async (req, res, next) => {
     if (!containsAllowedFields(req.body, commentFields)) {
         return res.sendStatus(400);
     }
 
-    // TODO: Test replied_id and previous_id validation
+    // TODO: Test replied_id and _id validation
     try {
         let valid = true;
 
@@ -145,7 +146,7 @@ const isValidComment = async (req, res, next) => {
         if (isTimestamp(req.body.timestamp, 15)) {
             if (req.body.replied_id === undefined) {
                 // do nothing
-            } else if (req.body.previous_id !== undefined) { 
+            } else if (req.body._id !== undefined) { 
                 // cant be passing in both, doesn't make sense
                 valid = false;
             } else {
@@ -153,7 +154,7 @@ const isValidComment = async (req, res, next) => {
                     const repliedComment = (await Comment.find({_id: req.body.replied_id}).limit(1))[0];
                     if (repliedComment === undefined || repliedComment.deleted 
                         || (!authFunctions.isManagerHelper(req, res, next) 
-                            && !(await Comment.findOne({_id: req.body.replied_id})).commentor.equals(req.user._id))) {
+                            && !(await Comment.findOne({_id: req.body.replied_id})).originalCommentor.equals(req.user._id))) {
                         valid = false;
                     }
                 } else {
@@ -161,19 +162,17 @@ const isValidComment = async (req, res, next) => {
                 }   
             }
 
-            // previous id is valid if comment exists, doesn't already have a next comment,
-            // commentors are the same, which is equal to current user 
-            if (req.body.previous_id === undefined || !valid) {
+            // valid if comment exists, commentors are the same, which is equal to current user 
+            if (req.body._id === undefined || !valid) {
                 // do nothing
             } else {
-                if (validator.isMongoId(req.body.previous_id)) {
-                    // if can't find, returns ... TODO: figure out
-                    const previousComment = (await Comment.find({_id: req.body.previous_id}).limit(1))[0];
-                    if (previousComment !== undefined && !previousComment.deleted && !previousComment.newComment 
-                        && previousComment.commentor.equals(req.user._id)) {
+                if (validator.isMongoId(req.body._id)) {
+                    const comment = (await Comment.find({_id: req.body._id}).limit(1))[0];
+                    if (comment !== undefined && !comment.deleted 
+                        && comment.commentor.equals(req.user._id)) {
                         // do nothing
                     } else {
-                        if (!previousComment.commentor.equals(req.user._id)) {
+                        if (!comment.commentor.equals(req.user._id)) {
                             return res.sendStatus(403);
                         }
                         valid = false;
