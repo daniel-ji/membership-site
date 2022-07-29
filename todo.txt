@@ -24,4 +24,4 @@ devops
 - update code with domain
 - deploy
 - make sure emails dont go to spam
-
+- limit api keys
