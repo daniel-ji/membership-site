@@ -9,6 +9,7 @@ const path = require('path');
 const ejs = require('ejs');
 const transporter = require('../config/nodemailer');
 
+const axios = require('axios');
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 
@@ -69,6 +70,7 @@ router.get('/one/:id', authFunctions.isManager, (req, res, next) => {
  * 
  * Authorized Users: Managers, Executives
  */
+// TODO: implement find store feature 
 router.get('/all', authFunctions.isManager, (req, res, next) => {
     Customer.find({}).exec().then(result => {
         res.status(200).json(result);
@@ -122,12 +124,20 @@ router.post('/signup', async (req, res, next) => {
             return res.status(409).json({'error': 'Phone number already exists'});
         }
 
+        // TODO: actually implement the store location
+        const bingData = await axios.get(`https://dev.virtualearth.net/REST/v1/Routes?` + 
+            `wp.1=${encodeURIComponent(req.body.address)}` + 
+            `&wp.2=${encodeURIComponent('400 Pierre Rd, Walnut, CA 91789')}` + 
+            `&optimize=distance&ra=routeSummariesOnly&distanceUnit=mi` + 
+            `&key=${process.env.BING_MAPS_API_KEY}`)
+
         const newCustomer = await Customer.create({
             name: req.body.name,
             phone: req.body.phone,
             email: req.body.email,
             username: req.body.email,
             address: req.body.address,
+            distanceFromStore: bingData?.data.resourceSets[0].resources[0].travelDistance,
             birthday: req.body.birthday,
             password: hashedPw,
             verifyToken: crypto.randomBytes(8).toString('hex')

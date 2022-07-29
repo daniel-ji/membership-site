@@ -29,6 +29,8 @@ const customerSchema = new Schema({
             return val.length > 0 && val.length <= 200;
         }, 'Invalid address']
     }, 
+    // units: miles
+    distanceFromStore: Number,
     birthday: {
         type: Date,
         validate: [val => {
