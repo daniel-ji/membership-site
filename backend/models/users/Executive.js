@@ -16,6 +16,10 @@ const executiveSchema = new Schema({
         default: 'Executive',
         immutable: true,
     },
+    chain: {
+        type: Schema.Types.ObjectId,
+        required: true
+    },
     active: {
         type: Boolean,
         default: true,

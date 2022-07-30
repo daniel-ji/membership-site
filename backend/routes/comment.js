@@ -4,9 +4,6 @@
 
 const express = require('express');
 const router = express.Router();
-const mongoose = require('mongoose');
-
-const validator = require('validator');
 
 const dotenv = require('dotenv');
 dotenv.config();
@@ -14,8 +11,6 @@ dotenv.config();
 const authFunctions = require('../config/authFunctions');
 const validFunctions = require('../config/validFunctions');
  
-const Customer = require('../models/users/Customer');
-const Manager = require('../models/users/Manager');
 const Comment = require('../models/Comment');
 
 /**

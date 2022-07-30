@@ -84,7 +84,7 @@ const isAuthenticated = (req, res, next) => {
  */
 const isSelf = (req, res, next) => {
     if (isSelfHelper(req, res, next)) return next();
-    res.sendStatus(403);
+    res.sendStatus(req.isAuthenticated() ? 403 : 401);
 }
 
 /**
@@ -101,7 +101,7 @@ const isSelfHelper = (req, res, next) => {
 */
 const isCustomer = (req, res, next) => {
     if (isCustomerHelper(req, res, next)) return next();
-    res.sendStatus(403);
+    res.sendStatus(req.isAuthenticated() ? 403 : 401);
 }
 
 const isCustomerHelper = (req, res, next) => {
@@ -115,7 +115,7 @@ const isCustomerHelper = (req, res, next) => {
  */
 const isManager = (req, res, next) => {
     if (isManagerHelper(req, res, next)) return next();
-    res.sendStatus(403);
+    res.sendStatus(req.isAuthenticated() ? 403 : 401);
 }
 
 /**
@@ -137,7 +137,7 @@ const isManagerHelper = (req, res, next) => {
 const isManagerOrSelf = (req, res, next, returnBoolean = false) => {
     if (returnBoolean) return isManagerHelper(req, res, next) || isSelfHelper(req, res, next);
     if (isManagerHelper(req, res, next) || isSelfHelper(req, res, next)) return next();
-    res.sendStatus(403);
+    res.sendStatus(req.isAuthenticated() ? 403 : 401);
 }
 
 
@@ -149,7 +149,7 @@ const isManagerOrSelf = (req, res, next, returnBoolean = false) => {
  */
 const isExecutive = (req, res, next) => {
     if (isExecutiveHelper(req, res, next)) return next();
-    res.sendStatus(403);
+    res.sendStatus(req.isAuthenticated() ? 403 : 401);
 }
 
 /**
@@ -167,7 +167,7 @@ const isExecutiveHelper = (req, res, next) => {
  */
 const isExecutiveOrSelf = (req, res, next) => {
     if (isExecutiveHelper(req, res, next) || isSelfHelper(req, res, next)) return next();
-    res.sendStatus(403);
+    res.sendStatus(req.isAuthenticated() ? 403 : 401);
 }
 
 /**
@@ -176,12 +176,17 @@ const isExecutiveOrSelf = (req, res, next) => {
  * @returns Forbidden if current session is not an executive or dev.
  */
 const isExecutiveOrDev = (req, res, next) => {
-    if (isExecutiveHelper(req, res, next) || isDev(req, res, next)) return next();
-    res.sendStatus(403);
+    if (isExecutiveHelper(req, res, next) || isDevHelper(req, res, next)) return next();
+    res.sendStatus(req.isAuthenticated() ? 403 : 401);
 }
 
 const isDev = (req, res, next) => {
-    return (req.body.devPassword !== process.env.DEV_PASSWORD)
+    if (isDevHelper(req, res, next)) return next();
+    res.sendStatus(401)
+} 
+
+const isDevHelper = (req, res, next) => {
+    return (req.body.devPassword === process.env.DEV_PASSWORD)
 }
 
-module.exports = {verify, isAuthenticated, getUserType, isSelf, isCustomer, isManager, isManagerHelper, isManagerOrSelf, isExecutive, isExecutiveOrSelf, isExecutiveOrDev, deserializeUser};
+module.exports = {verify, isAuthenticated, getUserType, isSelf, isCustomer, isManager, isManagerHelper, isManagerOrSelf, isExecutive, isExecutiveOrSelf, isExecutiveOrDev, isDev, deserializeUser};
