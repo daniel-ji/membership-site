@@ -122,18 +122,30 @@ router.post('/signup', async (req, res, next) => {
         }
 
         // TODO: actually implement the store location
+        const coordsData = await axios.get(`https://dev.virtualearth.net/REST/v1/Locations/` + 
+        encodeURIComponent(req.body.address) + 
+        `?&key=${process.env.BING_MAPS_API_KEY}`)
+        let coordinates;
+        
+        if (coordsData?.data.resourceSets[0].estimatedTotal > 0 && coordsData.data.resourceSets[0].resources[0].confidence === "High") {
+            coordinates = coordsData?.data.resourceSets[0].resources[0].point.coordinates;
+        } else {
+            return res.status(400).json({'error': 'Bad address.'});
+        }
+        
         const bingData = await axios.get(`https://dev.virtualearth.net/REST/v1/Routes?` + 
             `wp.1=${encodeURIComponent(req.body.address)}` + 
             `&wp.2=${encodeURIComponent('400 Pierre Rd, Walnut, CA 91789')}` + 
             `&optimize=distance&ra=routeSummariesOnly&distanceUnit=mi` + 
             `&key=${process.env.BING_MAPS_API_KEY}`)
-
+        
         const newCustomer = await Customer.create({
             name: req.body.name,
             phone: req.body.phone,
             email: req.body.email,
             username: req.body.email,
             address: req.body.address,
+            addressCoords: coordinates,
             distanceFromStore: bingData?.data.resourceSets[0].resources[0].travelDistance,
             birthday: req.body.birthday,
             password: hashedPw,
@@ -153,6 +165,7 @@ router.post('/signup', async (req, res, next) => {
 
         res.status(201).json({'success': 'Customer created.'});
     } catch (err) {
+        console.log(err)
         res.sendStatus(500);
     }
 });

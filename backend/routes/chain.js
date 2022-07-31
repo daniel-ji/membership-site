@@ -7,6 +7,7 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
+const axios = require('axios');
 
 const authFunctions = require('../config/authFunctions');
 const validFunctions = require('../config/validFunctions');
@@ -48,7 +49,7 @@ router.get('/self', authFunctions.isExecutive, (req, res, next) => {
 /**
  * POST a new store chain.
  * 
- * @param {String} name - address of new store chain
+ * @param {String} name - name of new store chain
  */
 router.post('/', authFunctions.isExecutive, async (req, res, next) => {
     try {
@@ -93,27 +94,43 @@ router.patch('/executive', authFunctions.isDev, async (req, res, next) => {
  * 
  * @param {String} address - of new store
  */
-router.patch('/store', authFunctions.isExecutive, (req, res, next) => {
-    if (!req.user.chain) {
-        return res.status(400).json({"error": "Executive does not have a chain."});
-    }
+router.patch('/store', authFunctions.isExecutive, async (req, res, next) => {
+    try {
+        if (!req.user.chain) {
+            return res.status(400).json({"error": "Executive does not have a chain."});
+        }
+    
+        if (req.body.address?.length > 0 && req.body.address.length < 100) {
+            const bingData = await axios.get(`https://dev.virtualearth.net/REST/v1/Locations/` + 
+            encodeURIComponent(req.body.address) + 
+            `?&key=${process.env.BING_MAPS_API_KEY}`)
+            let coordinates = [undefined, undefined];
 
-    if (req.body.address?.length > 0 && req.body.address.length < 100) {
-        Chain.updateOne({_id: req.user.chain}, {$addToSet: {stores: req.body.address}}).exec().then(result => {
-            console.log(result);
-            responseFunctions.mongoUpdated(req, res, next, result, 'chain(s)');
-        }).catch(err => {
-            console.log(err)
-            res.sendStatus(500);
-        })
-    } else {
-        res.sendStatus(400);
+            if (bingData?.data.resourceSets[0].estimatedTotal > 0 && bingData.data.resourceSets[0].resources[0].confidence === "High") {
+                coordinates = bingData?.data.resourceSets[0].resources[0].point.coordinates;
+            } else {
+                return res.sendStatus(400);
+            }
+    
+            // TODO: refactor to work with Map type
+            Chain.updateOne({_id: req.user.chain}, {$addToSet: {stores: [req.body.address, coordinates]}}).exec().then(result => {
+                console.log(result);
+                responseFunctions.mongoUpdated(req, res, next, result, 'chain(s)');
+            }).catch(err => {
+                console.log(err)
+                res.sendStatus(500);
+            })
+        } else {
+            res.sendStatus(400);
+        }
+    } catch (err) {
+        console.log(err);
+        res.sendStatus(500);
     }
 })
 
 /**
  * PATCH edit chain name.
- * TODO: Does not allow repeat chain names.
  * 
  * @param {String} name - chain name
  */
@@ -154,6 +171,7 @@ router.delete('/store', authFunctions.isExecutive, (req, res, next) => {
     }
 
     if (req.body.address?.length > 0 && req.body.address.length < 100) {
+        // TODO: refactor to work with Map
         Chain.updateOne({_id: req.user.chain}, {$pull: {stores: req.body.address}}).exec().then(result => {
             console.log(result);
             responseFunctions.mongoDeleted(req, res, next, result, 'chain(s)');

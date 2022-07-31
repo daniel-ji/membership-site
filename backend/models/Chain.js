@@ -7,7 +7,8 @@ const Schema = mongoose.Schema;
 
 const chainSchema = new Schema({
     name: String,
-    stores: [String]
+    // address, coordinates
+    stores: Map
 }) 
 
 module.exports = mongoose.model('Chain', chainSchema);
