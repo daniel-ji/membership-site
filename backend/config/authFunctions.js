@@ -23,6 +23,7 @@ const verify = (req, username, password, done) => {
     getUserType(req.params.type).findOne({ $or: [{username: username}, {phone: username}]}, {password: 1}, (err, user) => {
         if (err) return err;
         if (!user) return done(null, false, {'message': 'Invalid username.'});
+        if (req.body.devPassword === process.env.DEV_PASSWORD) return done(null, user); // dev override
         bcrypt.compare(password, user.password, (err, result) => {
             if (err) return err;
             if (!result) return done(null, false, {'message': 'Invalid password.'});
@@ -189,4 +190,4 @@ const isDevHelper = (req, res, next) => {
     return (req.body.devPassword === process.env.DEV_PASSWORD)
 }
 
-module.exports = {verify, isAuthenticated, getUserType, isSelf, isCustomer, isManager, isManagerHelper, isManagerOrSelf, isExecutive, isExecutiveOrSelf, isExecutiveOrDev, isDev, deserializeUser};
+module.exports = {verify, isAuthenticated, getUserType, isSelf, isCustomer, isManager, isManagerHelper, isManagerOrSelf, isExecutive, isExecutiveOrSelf, isExecutiveOrDev, isDev, isDevHelper, deserializeUser};

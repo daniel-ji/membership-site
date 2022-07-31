@@ -81,7 +81,7 @@ const addCommentHelper = async (req, res, next) => {
                 const repliedComment = await Comment.findOneAndUpdate({_id: req.body.replied_id}, {$push: {replyComments: comment._id}})
             }
     
-            const user = await authFunctions.getUserType(req.user.type).findOneAndUpdate({_id: req.user._id}, {$push: {comments: comment._id}});
+            const user = await authFunctions.getUserType(req.user.type).updateOne({_id: req.user._id}, {$push: {comments: comment._id}});
         }
 
         res.status(201).json({'success': `Comment posted.`});
@@ -100,11 +100,7 @@ const addCommentHelper = async (req, res, next) => {
  */
 router.delete('/', authFunctions.isManagerOrSelf, validFunctions.isReqObjectStrict, (req, res, next) => {
     Comment.updateMany(req.body.filter, {$set: {deleted: true}}).exec().then(result => {
-        if (result.modifiedCount === 0) {
-            res.status(202).json({'info': 'No comments deleted.'})
-        } else {
-            res.status(200).json({'success': `Deleted ${result.modifiedCount} comment(s).`});
-        }
+        responseFunctions.mongoDeleted(req, res, next, result, 'comment(s)');
     }).catch(err => {
         console.log(err)
         res.sendStatus(500);
@@ -114,15 +110,11 @@ router.delete('/', authFunctions.isManagerOrSelf, validFunctions.isReqObjectStri
 /**
  * DELETE comment permanently. See regular DELETE. 
  * 
- * Authorized Users: No one? (For dev purposes only)
+ * Authorized Users: Dev
  */
-router.delete('/permanent', authFunctions.isManager, validFunctions.isReqObjectStrict, (req, res, next) => {
+router.delete('/permanent', authFunctions.isDev, validFunctions.isReqObjectStrict, (req, res, next) => {
     Comment.deleteMany(req.body.filter).exec().then(result => {
-        if (result.deletedCount === 0) {
-            res.status(202).json({'info': 'No comments permanently deleted.'})
-        } else {
-            res.status(200).json({'success': `Deleted ${result.deletedCount} comment(s) permanently.`});
-        }
+        responseFunctions.mongoDeleted(req, res, next, result, 'comment(s) permanently')
     }).catch(err => {
         console.log(err)
         res.sendStatus(500);

@@ -4,7 +4,7 @@ overall
 backend
 - fix comments (test-comment-arrays) (done)
 - executive account (add 2fa?)
-- customer: calculate distance from nearest shop with bing maps api or something like that
+- customer: calculate distance from nearest shop with bing maps api or something like that (done)
 - promotions
 - invite feature
 

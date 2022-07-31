@@ -8,6 +8,7 @@ dotenv.config();
 
 const authFunctions = require('../config/authFunctions');
 const validFunctions = require('../config/validFunctions');
+const responseFunctions = require('../config/responseFunctions');
 
 const Manager = require('../models/users/Manager');
 
@@ -73,11 +74,7 @@ router.patch('/', authFunctions.isExecutiveOrSelf, validFunctions.isReqObjectStr
     }
 
     Manager.updateMany(req.body.filter, {$set: req.body.update}).exec().then(result => {
-        if (result.modifiedCount === 0) {
-            res.status(200).json({'info': `Updated 0 users.`})
-        } else {
-            res.status(200).json({'success': `Updated ${result.modifiedCount} user(s).`})
-        }
+        responseFunctions.mongoUpdated(req, res, next, result, 'manager(s)');
     }).catch(err => {
         console.log(err);
         res.sendStatus(500);
@@ -91,11 +88,7 @@ router.patch('/', authFunctions.isExecutiveOrSelf, validFunctions.isReqObjectStr
  */
 router.delete('/delete', authFunctions.isExecutive, validFunctions.isReqObjectStrict, (req, res, next) => {
     Manager.deleteMany(req.body.filter).exec().then(result => {
-        if (result.deletedCount === 0) {
-            res.status(202).json({'info': 'No managers deleted.'})
-        } else {
-            res.status(200).json({'success': `Deleted ${result.deletedCount} manager(s).`});
-        }
+        responseFunctions.mongoDeleted(req, res, next, result, 'manager(s)');
     }).catch(err => {
         console.log(err);
         res.sendStatus(500);

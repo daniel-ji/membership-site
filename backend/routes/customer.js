@@ -19,6 +19,7 @@ dotenv.config();
 
 const authFunctions = require('../config/authFunctions');
 const validFunctions = require('../config/validFunctions');
+const responseFunctions = require('../config/responseFunctions');
 
 const Customer = require('../models/users/Customer');
 
@@ -93,11 +94,7 @@ router.patch('/', authFunctions.isManagerOrSelf, validFunctions.isReqObjectStric
     }
 
     Customer.updateMany(req.body.filter, {$set: req.body.update}).exec().then(result => {
-        if (result.modifiedCount === 0) {
-            res.status(200).json({'info': `Updated 0 users.`})
-        } else {
-            res.status(200).json({'success': `Updated ${result.modifiedCount} user(s).`})
-        }
+        responseFunctions.mongoUpdated(req, res, next, result, 'user(s)');
     }).catch(err => {
         console.log(err);
         res.sendStatus(500);
@@ -167,11 +164,7 @@ router.post('/signup', async (req, res, next) => {
  */
 router.delete('/delete', authFunctions.isManagerOrSelf, validFunctions.isReqObjectStrict, (req, res, next) => {
     Customer.deleteMany(req.body.filter).exec().then(result => {
-        if (result.deletedCount === 0) {
-            res.status(202).json({'info': 'No customers deleted.'})
-        } else {
-            res.status(200).json({'success': `Deleted ${result.deletedCount} customer(s).`});
-        }
+        responseFunctions.mongoDeleted(req, res, next, result, 'customer(s)');
     }).catch(err => {
         console.log(err);
         res.sendStatus(500);
