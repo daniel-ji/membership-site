@@ -23,18 +23,16 @@ const customerSchema = new Schema({
         }, 'Invalid name']
     },
     address: {
-        type: String,
-        required: true,
-        validate: [val => {
-            return val.length > 0 && val.length <= 200;
-        }, 'Invalid address']
-    }, 
-    addressCoords: {
-        type: [Number],
-        required: true
+        type: Map,
+        of: [Number],
+        default: {}
     },
     // units: miles
-    distanceFromStore: Number,
+    closestStores: {
+        type: Map,
+        of: [Number], // [long, lat, dist]
+        default: {}
+    },
     birthday: {
         type: Date,
         validate: [val => {

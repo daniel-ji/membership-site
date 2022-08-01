@@ -26,17 +26,16 @@ const userSchema = new Schema({
         type: String,
         required: true,
     },
-    // TODO: test if this.email !== null or !== undefined
     phone: {
         type: String,
-        required: () => {return this.email !== undefined},
+        required: () => {return !!this.email},
         validate: [val => {
             return validator.isMobilePhone(val);
         }, 'Invalid phone number']
     }, 
     email: {
         type: String, 
-        required: () => {return this.phone !== undefined},
+        required: () => {return !!this.phone},
         validate: [val => {
             return validator.isEmail(val);
         }, 'Invalid email']

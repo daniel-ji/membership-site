@@ -112,14 +112,14 @@ router.patch('/store', authFunctions.isExecutive, async (req, res, next) => {
                 return res.sendStatus(400);
             }
     
-            // TODO: refactor to work with Map type
-            Chain.updateOne({_id: req.user.chain}, {$addToSet: {stores: [req.body.address, coordinates]}}).exec().then(result => {
-                console.log(result);
-                responseFunctions.mongoUpdated(req, res, next, result, 'chain(s)');
-            }).catch(err => {
-                console.log(err)
-                res.sendStatus(500);
-            })
+            const chain = await Chain.findOne({_id: req.user.chain});
+            if (chain.stores.has(req.body.address)) {
+                res.sendStatus(202);
+            } else {
+                chain.stores.set(req.body.address, coordinates);
+                chain.save();
+                res.sendStatus(200);
+            }
         } else {
             res.sendStatus(400);
         }
@@ -165,22 +165,29 @@ router.patch('/name', authFunctions.isExecutive, async (req, res, next) => {
  * 
  * @param {String} address - of the store
  */
-router.delete('/store', authFunctions.isExecutive, (req, res, next) => {
-    if (!req.user.chain) {
-        return res.status(400).json({"error": "Executive does not have a chain."});
-    }
-
-    if (req.body.address?.length > 0 && req.body.address.length < 100) {
-        // TODO: refactor to work with Map
-        Chain.updateOne({_id: req.user.chain}, {$pull: {stores: req.body.address}}).exec().then(result => {
-            console.log(result);
-            responseFunctions.mongoDeleted(req, res, next, result, 'chain(s)');
-        }).catch(err => {
-            console.log(err)
-            res.sendStatus(500);
-        })
-    } else {
-        res.sendStatus(400);
+router.delete('/store', authFunctions.isExecutive, async (req, res, next) => {
+    try {
+        if (!req.user.chain) {
+            return res.status(400).json({"error": "Executive does not have a chain."});
+        }
+    
+        if (req.body.address?.length > 0 && req.body.address.length < 100) {
+            const chain = await Chain.findOne({_id: req.user.chain});
+            console.log(chain.stores);
+            console.log(req.body.address);
+            if (chain.stores.has(req.body.address)) {                
+                chain.stores.delete(req.body.address);
+                chain.save();
+                res.sendStatus(200);
+            } else {
+                res.status(400).json({"error": "Store does not exist in chain."})
+            }
+        } else {
+            res.sendStatus(400);
+        }
+    } catch (err) {
+        console.log(err);
+        res.sendStatus(500);
     }
 }) 
 
@@ -195,7 +202,7 @@ router.delete('/', authFunctions.isExecutive, (req, res, next) => {
         console.log(err);
         !res.headersSent && res.sendStatus(500);
     })
-    Executive.updateOne({_id: req.user._id}, {chain: undefined}).exec().catch(err => {
+    Executive.updateOne({_id: req.user._id}, {$unset: {chain: 1}}).exec().catch(err => {
         console.log(err);
         res.sendStatus(500);
     })

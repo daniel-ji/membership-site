@@ -18,8 +18,7 @@ const Comment = require('../models/Comment');
  * 
  * Authorized Users: Managers, Executives
  */
-// TODO: Add back authFunctions.isManager
- router.get('/all-comments', (req, res, next) => {
+ router.get('/all-comments', authFunctions.isManager, (req, res, next) => {
     Comment.find({}).exec().then(result => {
         res.status(200).json(result);
     }).catch(err => {

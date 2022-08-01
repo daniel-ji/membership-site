@@ -6,12 +6,13 @@ const moment = require('moment');
 const validator = require('validator');
 
 // TODO: replace comments back with preferences
-const customerFields = ['name', 'phone', 'email', 'address', 'birthday', 'password', 'username', 'comments'];
+const customerFields = ['name', 'phone', 'email', 'address', 'birthday', 'password', 'username', 'chain', 'comments'];
 const managerFields = ['name', 'phone', 'email', 'password'];
 const commentFields = ['replied_id', 'comment', 'timestamp', '_id'];
 const commonObjectStrictParams = ['filter', 'update']; 
 
 const Comment = require('../models/Comment');
+const Chain = require('../models/Chain');
 const authFunctions = require('./authFunctions');
 
 /**
@@ -98,14 +99,20 @@ const isValidCustomerReg = (body) => {
  * 
  * @returns {Boolean} true if customer update request body is valid, false otherwise 
  */
-const isValidCustomerUpdate = (body) => {
-    return containsAllowedFields(body, customerFields) 
+const isValidCustomerUpdate = async (body) => {
+    try {
+        return containsAllowedFields(body, customerFields) 
         && (!body.birthday || isDate(body.birthday, 18))
         && (!body.email || validator.isEmail(body.email))
         && (!body.phone || validator.isMobilePhone(body.phone))
         && (!body.password || validator.isStrongPassword(body.password, {minSymbols: 0}))
         && (!body.name || body.name.length > 0 && body.name.length <= 100)
-        && (!body.address || body.address.length > 0 && body.address.length <= 200);
+        && (!body.address || body.address.length > 0 && body.address.length <= 200)
+        && (!body.chain || (validator.isMongoId(body.chain) && !!(await Chain.find({name: body.chain}).limit(1))[0]));
+    } catch (err) {
+        console.log(err);
+        return false;
+    }
 }
 
 /**

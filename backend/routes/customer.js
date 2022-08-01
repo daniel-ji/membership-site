@@ -22,6 +22,7 @@ const validFunctions = require('../config/validFunctions');
 const responseFunctions = require('../config/responseFunctions');
 
 const Customer = require('../models/users/Customer');
+const Chain = require('../models/Chain');
 
 /**
  * GET request for verifying customer signup.
@@ -71,7 +72,6 @@ router.get('/one/:id', authFunctions.isManager, (req, res, next) => {
  * 
  * Authorized Users: Managers, Executives
  */
-// TODO: implement find store feature 
 router.get('/all', authFunctions.isManager, (req, res, next) => {
     Customer.find({}).exec().then(result => {
         res.status(200).json(result);
@@ -122,6 +122,7 @@ router.post('/signup', async (req, res, next) => {
         }
 
         // TODO: actually implement the store location
+
         const coordsData = await axios.get(`https://dev.virtualearth.net/REST/v1/Locations/` + 
         encodeURIComponent(req.body.address) + 
         `?&key=${process.env.BING_MAPS_API_KEY}`)
@@ -133,29 +134,61 @@ router.post('/signup', async (req, res, next) => {
             return res.status(400).json({'error': 'Bad address.'});
         }
         
+        // Get all the stores and the chain and loop through all of them, finding the distance to each store and saving in an array
+        // Sort the array and grab top 3 closest locations 
+        // For each of the 3, find the actual distance with a Bing Map API request
+        // Save (in order) of the distance to stores, and those stores
+
         const bingData = await axios.get(`https://dev.virtualearth.net/REST/v1/Routes?` + 
             `wp.1=${encodeURIComponent(req.body.address)}` + 
             `&wp.2=${encodeURIComponent('400 Pierre Rd, Walnut, CA 91789')}` + 
             `&optimize=distance&ra=routeSummariesOnly&distanceUnit=mi` + 
             `&key=${process.env.BING_MAPS_API_KEY}`)
         
+        // TODO: Refactor this to make address and closest store a map
         const newCustomer = await Customer.create({
             name: req.body.name,
             phone: req.body.phone,
             email: req.body.email,
             username: req.body.email,
-            address: req.body.address,
-            addressCoords: coordinates,
             distanceFromStore: bingData?.data.resourceSets[0].resources[0].travelDistance,
             birthday: req.body.birthday,
             password: hashedPw,
             verifyToken: crypto.randomBytes(8).toString('hex')
         })
+        
+        // add address to new customer
+        newCustomer.address.set(req.body.address, coordinates);
+
+        // add closest stores to new customer
+        const chain = await Chain.findOne({_id: req.body.chain})
+        // calculate distance from address to each store
+        chain.stores.forEach((value, key) => {
+            chain.stores.set(key, [...value, Math.sqrt((coordinates[0] - value[0]) ** 2 + (coordinates[1] - value[1]) ** 2)])
+        })
+        // sort stores by distance to address
+        const sortedStores = new Map([...chain.stores.entries()].sort((a, b) => a[1][2] - b[1][2]));
+        // get closest three stores absolute distance wise, and sort them by traveling distance 
+        const threeStores = new Map();
+        let i = 0;
+        for (const [key, value] of sortedStores) {
+            if (i === 3) return;
+            threeStores.set(key, [...value, 0/* TODO: get traveling distance here */])
+        }
+
+        const closestStores = new Map([...threeStores.entries()].sort((a, b) => a[1][3] - b[1][3]));
+        for (const [key, value] of closestStores) {
+            newCustomer.closestStores.set(key, value)
+        }
+
+        // save everything
+        newCustomer.save();
 
         const htmlEmail = await ejs.renderFile(
             path.join(__dirname, '..', 'views', 'emails', 'verify.ejs'), {
             url: process.env.DOMAIN + "/api/customer/verify/" + newCustomer.verifyToken});
 
+        // TODO: change email from
         const verify = await transporter.sendMail({
             from: '"Verify Email" <jidaniel1234@gmail.com>',
             to: newCustomer.email,
