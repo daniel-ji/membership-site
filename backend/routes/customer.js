@@ -20,6 +20,7 @@ dotenv.config();
 const authFunctions = require('../config/authFunctions');
 const validFunctions = require('../config/validFunctions');
 const responseFunctions = require('../config/responseFunctions');
+const bingMaps = require('../config/bingMaps');
 
 const Customer = require('../models/users/Customer');
 const Chain = require('../models/Chain');
@@ -86,19 +87,38 @@ router.get('/all', authFunctions.isManager, (req, res, next) => {
  * 
  * Authorized Users: Self, Managers, Executives
  * 
- * @param {String} _id - ObjectId of customer; required for updating self
+ * @param {Object} filter
+ * @param {Object} update - fields to update
+ * @param {String} filter._id - ObjectId of customer; required for updating self
  */
-router.patch('/', authFunctions.isManagerOrSelf, validFunctions.isReqObjectStrict, (req, res, next) => {
-    if (!validFunctions.isValidCustomerUpdate(req.body.update)) {
+// TODO: test all this 
+router.patch('/', authFunctions.isManagerOrSelf, validFunctions.isReqObjectStrict, async (req, res, next) => {
+    if (!validFunctions.isValidCustomerUpdate(req.body.update) && (await Customer.find(req.body.filter).limit(1))[0] !== undefined) {
         return res.sendStatus(400);
     }
 
-    Customer.updateMany(req.body.filter, {$set: req.body.update}).exec().then(result => {
+    try {
+        if (req.body.update.address) {
+            const customer = await Customer.findOne(req.body.filter);
+
+            let coordinates;
+            if (bingMaps.validAddress(req.body.update.address)) {
+                coordinates = bingMaps.coordinatesOfAddress(req.body.update.address);
+                customer.address.set(req.body.update.address, coordinates);
+            } else {
+                return res.status(400).json({'error': 'Bad address.'});
+            }
+    
+            bingMaps.updateClosestStores(customer, req.body.update.address, coordinates, req.body.update.chain);
+        }
+        delete req.body.update.address;
+        delete req.body.update.chain;
+
+        const updatedCustomer = await Customer.updateOne(req.body.filter, req.body.update);
         responseFunctions.mongoUpdated(req, res, next, result, 'user(s)');
-    }).catch(err => {
-        console.log(err);
-        res.sendStatus(500);
-    })
+    } catch (err) {
+        return res.sendStatus(500);
+    }
 })
 
 /** 
@@ -106,6 +126,7 @@ router.patch('/', authFunctions.isManagerOrSelf, validFunctions.isReqObjectStric
  * 
  * Authorized Users: Everyone
  */
+// TODO: test all this
 router.post('/signup', async (req, res, next) => {
     if (!validFunctions.isValidCustomerReg(req.body)) {
         return res.sendStatus(400);
@@ -121,74 +142,31 @@ router.post('/signup', async (req, res, next) => {
             return res.status(409).json({'error': 'Phone number already exists'});
         }
 
-        // TODO: actually implement the store location
-
-        const coordsData = await axios.get(`https://dev.virtualearth.net/REST/v1/Locations/` + 
-        encodeURIComponent(req.body.address) + 
-        `?&key=${process.env.BING_MAPS_API_KEY}`)
-        let coordinates;
-        
-        if (coordsData?.data.resourceSets[0].estimatedTotal > 0 && coordsData.data.resourceSets[0].resources[0].confidence === "High") {
-            coordinates = coordsData?.data.resourceSets[0].resources[0].point.coordinates;
-        } else {
-            return res.status(400).json({'error': 'Bad address.'});
-        }
-        
-        // Get all the stores and the chain and loop through all of them, finding the distance to each store and saving in an array
-        // Sort the array and grab top 3 closest locations 
-        // For each of the 3, find the actual distance with a Bing Map API request
-        // Save (in order) of the distance to stores, and those stores
-
-        const bingData = await axios.get(`https://dev.virtualearth.net/REST/v1/Routes?` + 
-            `wp.1=${encodeURIComponent(req.body.address)}` + 
-            `&wp.2=${encodeURIComponent('400 Pierre Rd, Walnut, CA 91789')}` + 
-            `&optimize=distance&ra=routeSummariesOnly&distanceUnit=mi` + 
-            `&key=${process.env.BING_MAPS_API_KEY}`)
-        
-        // TODO: Refactor this to make address and closest store a map
         const newCustomer = await Customer.create({
             name: req.body.name,
             phone: req.body.phone,
             email: req.body.email,
             username: req.body.email,
-            distanceFromStore: bingData?.data.resourceSets[0].resources[0].travelDistance,
             birthday: req.body.birthday,
             password: hashedPw,
             verifyToken: crypto.randomBytes(8).toString('hex')
         })
         
-        // add address to new customer
-        newCustomer.address.set(req.body.address, coordinates);
-
-        // add closest stores to new customer
-        const chain = await Chain.findOne({_id: req.body.chain})
-        // calculate distance from address to each store
-        chain.stores.forEach((value, key) => {
-            chain.stores.set(key, [...value, Math.sqrt((coordinates[0] - value[0]) ** 2 + (coordinates[1] - value[1]) ** 2)])
-        })
-        // sort stores by distance to address
-        const sortedStores = new Map([...chain.stores.entries()].sort((a, b) => a[1][2] - b[1][2]));
-        // get closest three stores absolute distance wise, and sort them by traveling distance 
-        const threeStores = new Map();
-        let i = 0;
-        for (const [key, value] of sortedStores) {
-            if (i === 3) return;
-            threeStores.set(key, [...value, 0/* TODO: get traveling distance here */])
+        let coordinates;
+        if (bingMaps.validAddress(req.body.address)) {
+            coordinates = bingMaps.coordinatesOfAddress(req.body.address);
+            newCustomer.address.set(req.body.address, coordinates);
+        } else {
+            return res.status(400).json({'error': 'Bad address.'});
         }
 
-        const closestStores = new Map([...threeStores.entries()].sort((a, b) => a[1][3] - b[1][3]));
-        for (const [key, value] of closestStores) {
-            newCustomer.closestStores.set(key, value)
-        }
-
-        // save everything
-        newCustomer.save();
+        bingMaps.updateClosestStores(newCustomer, req.body.address, coordinates, req.body.chain);
 
         const htmlEmail = await ejs.renderFile(
             path.join(__dirname, '..', 'views', 'emails', 'verify.ejs'), {
             url: process.env.DOMAIN + "/api/customer/verify/" + newCustomer.verifyToken});
 
-        // TODO: change email from
+        // TODO: change email from jidaniel1234@gmail.com
         const verify = await transporter.sendMail({
             from: '"Verify Email" <jidaniel1234@gmail.com>',
             to: newCustomer.email,
