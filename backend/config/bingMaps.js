@@ -8,21 +8,18 @@ const axios = require('axios');
 const dotenv = require('dotenv');
 dotenv.config();
 
-const validAddress = async (address) => {
-    const coordsData = await axios.get(`https://dev.virtualearth.net/REST/v1/Locations/` + 
-    encodeURIComponent(req.body.address) + 
-    `?&key=${process.env.BING_MAPS_API_KEY}`)
-    return coordsData?.data.resourceSets[0].estimatedTotal > 0 && coordsData.data.resourceSets[0].resources[0].confidence === "High";
-}
-
 const coordinatesOfAddress = async (address) => {
     const coordsData = await axios.get(`https://dev.virtualearth.net/REST/v1/Locations/` + 
-    encodeURIComponent(req.body.address) + 
+    encodeURIComponent(address) + 
     `?&key=${process.env.BING_MAPS_API_KEY}`)
-    return coordsData?.data.resourceSets[0].resources[0].point.coordinates;
+    if (coordsData?.data.resourceSets[0].estimatedTotal > 0 && coordsData.data.resourceSets[0].resources[0].confidence === "High") {
+        return coordsData?.data.resourceSets[0].resources[0].point.coordinates
+    } else {
+        return false;
+    }
 } 
 
-const updateClosestStores = async (customer, coordinates, address, chain_id) => {
+const updateClosestStores = async (customer, address, coordinates, chain_id) => {
     // add closest stores to new customer
     const chain = await Chain.findOne({_id: chain_id})
     // calculate distance from address to each store
@@ -54,4 +51,4 @@ const updateClosestStores = async (customer, coordinates, address, chain_id) => 
     customer.save();
 }
 
-module.exports = {validAddress, coordinatesOfAddress, updateClosestStores}
+module.exports = {coordinatesOfAddress, updateClosestStores}

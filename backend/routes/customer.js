@@ -101,10 +101,9 @@ router.patch('/', authFunctions.isManagerOrSelf, validFunctions.isReqObjectStric
         if (req.body.update.address) {
             const customer = await Customer.findOne(req.body.filter);
 
-            let coordinates;
-            if (bingMaps.validAddress(req.body.update.address)) {
-                coordinates = bingMaps.coordinatesOfAddress(req.body.update.address);
-                customer.address.set(req.body.update.address, coordinates);
+            let coordinates = bingMaps.coordinatesOfAddress(req.body.address);
+            if (coordinates) {
+                customer.address.set(req.body.address, coordinates);
             } else {
                 return res.status(400).json({'error': 'Bad address.'});
             }
@@ -126,7 +125,6 @@ router.patch('/', authFunctions.isManagerOrSelf, validFunctions.isReqObjectStric
  * 
  * Authorized Users: Everyone
  */
-// TODO: test all this
 router.post('/signup', async (req, res, next) => {
     if (!validFunctions.isValidCustomerReg(req.body)) {
         return res.sendStatus(400);
@@ -152,11 +150,11 @@ router.post('/signup', async (req, res, next) => {
             verifyToken: crypto.randomBytes(8).toString('hex')
         })
         
-        let coordinates;
-        if (bingMaps.validAddress(req.body.address)) {
-            coordinates = bingMaps.coordinatesOfAddress(req.body.address);
+        let coordinates = await bingMaps.coordinatesOfAddress(req.body.address);
+        if (coordinates) {
             newCustomer.address.set(req.body.address, coordinates);
         } else {
+            const deleted = await Customer.deleteOne({email: req.body.email})
             return res.status(400).json({'error': 'Bad address.'});
         }
 
@@ -176,7 +174,10 @@ router.post('/signup', async (req, res, next) => {
 
         res.status(201).json({'success': 'Customer created.'});
     } catch (err) {
-        console.log(err)
+        console.log(err);
+        Customer.deleteOne({email: req.body.email}).exec().catch(err => {
+            console.log(err)
+        });
         res.sendStatus(500);
     }
 });
