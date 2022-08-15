@@ -8,6 +8,7 @@ const router = express.Router();
 const dotenv = require('dotenv');
 dotenv.config();
 
+const validator = require('validator');
 const authFunctions = require('../config/authFunctions');
 const validFunctions = require('../config/validFunctions');
  
@@ -27,12 +28,27 @@ const Comment = require('../models/Comment');
     })
 })
 
-// TODO
 /**
  * GET comments specified in filter (a list of ObjectIDs).
  * 
+ * @param {Array} comments - array of ids of comments to request for 
+ * 
  * Authorized Users: Self, Managers, Executives 
  */
+router.post('/filters', authFunctions.isManagerOrSelf, (req, res, next) => {
+    if (req.body.comments?.constructor === Array && req.body.comments.every(e => validator.isMongoId(e))) {
+        console.log(req.body.comments)
+        filter = req.body.comments.map(e => {return {_id: e}})
+        Comment.find({$or: filter}).exec().then(result => {
+            res.status(200).json(result)
+        }).catch(err => {
+            console.log(err);
+            res.sendStatus(500)
+        })
+    } else {
+        res.sendStatus(400);
+    }
+})
 
 /**
  * POST new comment, by a customer.

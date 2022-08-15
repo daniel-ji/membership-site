@@ -21,8 +21,6 @@ router.get('/loggedin', authFunctions.isAuthenticated, (req, res) => {
     res.status(200).json({loggedIn: true, type: req.user.type});
 });
 
-
-// TODO: not sending too much data (like deleted comments)
 /** 
  * GET user information.
  * 

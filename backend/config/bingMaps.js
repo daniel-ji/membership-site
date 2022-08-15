@@ -28,7 +28,7 @@ const updateClosestStores = async (customer, address, coordinates, chain_id) => 
     })
     // sort stores by distance to address
     const sortedStores = new Map([...chain.stores.entries()].sort((a, b) => a[1][2] - b[1][2]));
-    // get closest three stores absolute distance wise, and sort them by traveling distance 
+    // get closest three stores absolute distance wise
     const threeStores = new Map();
     let i = 0;
     for (const [key, value] of sortedStores) {
@@ -42,7 +42,7 @@ const updateClosestStores = async (customer, address, coordinates, chain_id) => 
         threeStores.set(key, [...value, distance])
     }
 
-    const closestStores = new Map([...threeStores.entries()].sort((a, b) => a[1][3] - b[1][3]));
+    // save three closest three stores, MongoDB does not retain order 
     for (const [key, value] of closestStores) {
         customer.closestStores.set(key, value)
     }

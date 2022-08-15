@@ -27,6 +27,7 @@ const managerRouter = require('./routes/manager');
 const executiveRouter = require('./routes/executive');
 const commentRouter = require('./routes/comment');
 const chainRouter = require('./routes/chain');
+const promotionRouter = require('./routes/promotion')
 
 const app = express();
 
@@ -93,5 +94,6 @@ app.use('/api/manager', managerRouter);
 app.use('/api/executive', executiveRouter);
 app.use('/api/comment', commentRouter);
 app.use('/api/chain', chainRouter);
+app.use('/api/promotion', promotionRouter);
 
 module.exports = app;
