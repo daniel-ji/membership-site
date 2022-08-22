@@ -9,6 +9,7 @@ const validator = require('validator');
 const customerFields = ['name', 'phone', 'email', 'address', 'birthday', 'password', 'username', 'chain', 'comments'];
 const managerFields = ['name', 'phone', 'email', 'password'];
 const commentFields = ['replied_id', 'comment', 'timestamp', '_id'];
+const promotionFields = ['name', 'expiryDate', 'promotionLength', 'spendingType', 'requiredSpending', 'benefitType', 'benefit'];
 const commonObjectStrictParams = ['filter', 'update']; 
 
 const Comment = require('../models/Comment');
@@ -49,9 +50,10 @@ const isReqObjectStrict = (req, res, next) => {
  * @param {*} yearsBefore ensure date is at least yearsBefore years before today
  * @returns {Boolean} true if date is valid, false otherwise
  */
-const isDate = (date, yearsBefore = 0) => {
+const isDate = (date, yearsBefore = -1, afterToday = false) => {
     return moment(date, 'E MMM dd yyyy').isValid() 
-        && (yearsBefore === -1 || moment(date, 'E MMM dd yyyy').isBefore(moment().subtract(yearsBefore, 'years')))
+        && (yearsBefore === -1 || moment(date, 'E MMM dd yyyy').isBefore(moment().subtract(yearsBefore, 'years'))
+        && (!afterToday || moment(date, 'E MMM dd yyyy').isAfter(moment())))
 }
 
 /**
@@ -88,11 +90,15 @@ const containsAllowedFields = (body, whitelist) => {
  * 
  * @returns {Boolean} true if customer registration request body is valid, false otherwise
  */
-const isValidCustomerReg = (body) => {
-    return body.username === body.email 
-        && Object.keys(body).length === customerFields.length - 1
-        && body.preferences === undefined
-        && isValidCustomerUpdate(body)
+const isValidCustomerReg = (req, res, next) => {
+    if (req.body.username === req.body.email 
+        && Object.keys(req.body).length === customerFields.length - 1
+        && req.body.preferences === undefined
+        && isValidCustomerUpdate(req.body)) {
+        return next()
+    } else {
+        return res.sendStatus(400)
+    }
 }
 
 /**
@@ -200,4 +206,41 @@ const isValidComment = async (req, res, next) => {
 
 }
 
-module.exports = {isObjectStrict, isReqObjectStrict, isDate, isTimestamp, isValidCustomerReg, isValidCustomerUpdate, isValidManagerReg, isValidManagerUpdate, isValidComment};
+// TODO: test all this
+/**
+ * @returns Bad Request if data is not proper promotion create POST request.
+ */
+const isValidPromotion = (req, res, next) => {
+    if (Object.keys(req.body).length === promotionFields.length) {
+        return isValidPromotionUpdate(req, res, next)
+    }
+    
+    return res.sendStatus(400);
+}
+
+/**
+ * @returns Bad Request if data is not proper promotion update POST request.
+ */
+const isValidPromotionUpdate = (req, res, next) => {
+    if (!containsAllowedFields(req.body, promotionFields)) {
+        return res.sendStatus(400);
+    }
+
+    // TODO: especially test all of this
+    nameValid = req.body.name === undefined || (typeof req.body.name === 'string' && req.body.name.length > 0 && req.body.name.length < 500)
+    expiryDateValid = req.body.expiryDate === undefined || isDate(req.body.expiryDate, -1, true)
+    promotionLengthValid = req.body.promotionLength === undefined || (Number.isInteger(req.body.promotionLength) && req.body.promotionLength > 0 && req.body.promotionLength < 365 * 100)
+    spendingTypeValid = req.body.spendingType === undefined || (typeof req.body.spendingType === 'string' && (req.body.spendingType.toLowerCase() === 'money' || req.body.spendingType.toLowerCase() === 'product'))
+    requiredSpendingValid = req.body.requiredSpending === undefined || (Number.isInteger(req.body.requiredSpending) && req.body.requiredSpending >= 0 && req.body.requiredSpending < 1000000)
+    benefitTypeValid = req.body.benefitType === undefined (typeof req.body.benefitType === 'string' && (req.body.benefitType === 'credit' || req.body.spendingType.toLowerCase() === 'product'))
+    benefitValid = req.body.benefit === undefined || (Number.isInteger(req.body.benefit) && req.body.benefit > 0 && req.body.benefit > 1000000)
+
+    if (nameValid && expiryDateValid && promotionLenghtValid && spendingTypeValid && requiredSpendingValid && benefitTypeValid && benefitValid) {
+        return next();
+    } else {
+        return res.sendStatus(400);
+    }
+    
+}
+
+module.exports = {isObjectStrict, isReqObjectStrict, isDate, isTimestamp, isValidCustomerReg, isValidCustomerUpdate, isValidManagerReg, isValidManagerUpdate, isValidComment, isValidPromotion};

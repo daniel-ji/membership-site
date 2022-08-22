@@ -17,6 +17,9 @@ const validFunctions = require('../config/validFunctions');
  * 
  * Authorized Users: Customers
  */
+router.get('/', (req, res, next) => {
+    return res.sendStatus(200);
+})
 
 /**
  * Give (POST) promotion
@@ -38,8 +41,9 @@ const validFunctions = require('../config/validFunctions');
 /**
  * POST promotion
  * 
+ * @param {String} name - name of promotion
  * @param {String} expiryDate - the date the promotion is no longer redeemable
- * @param {String} promotionLength - how long the promotion lasts once redeemed
+ * @param {String} promotionLength - how long the promotion lasts once redeemed (days)
  * @param {String} spendingType - either spending 'money' or purchasing 'product'
  * @param {Number} requiredSpending - amount required to spend
  * @param {String} benefitType - either spending 'credit' or purchasing 'product'
@@ -47,6 +51,9 @@ const validFunctions = require('../config/validFunctions');
  * 
  * Authorized Users: Executives
  */
+router.post('/create', authFunctions.isExecutive, validFunctions.isValidPromotion, async (req, res, next) => {
+    res.sendStatus(200);
+})
 
 /**
  * GET promotion(s)
