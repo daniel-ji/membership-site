@@ -9,7 +9,7 @@ const validator = require('validator');
 const customerFields = ['name', 'phone', 'email', 'address', 'birthday', 'password', 'username', 'chain', 'comments'];
 const managerFields = ['name', 'phone', 'email', 'password'];
 const commentFields = ['replied_id', 'comment', 'timestamp', '_id'];
-const promotionFields = ['name', 'expiryDate', 'promotionLength', 'spendingType', 'requiredSpending', 'benefitType', 'benefit'];
+const promotionFields = ['name', 'expiryDate', 'promotionLength', 'spendingType', 'requiredSpending', 'benefitType', 'benefit', 'public'];
 const commonObjectStrictParams = ['filter', 'update']; 
 
 const Comment = require('../models/Comment');
@@ -52,8 +52,8 @@ const isReqObjectStrict = (req, res, next) => {
  */
 const isDate = (date, yearsBefore = -1, afterToday = false) => {
     return moment(date, 'E MMM dd yyyy').isValid() 
-        && (yearsBefore === -1 || moment(date, 'E MMM dd yyyy').isBefore(moment().subtract(yearsBefore, 'years'))
-        && (!afterToday || moment(date, 'E MMM dd yyyy').isAfter(moment())))
+        && (yearsBefore === -1 || moment(date, 'E MMM dd yyyy').isBefore(moment().subtract(yearsBefore, 'years')))
+        && (!afterToday || moment(date, 'E MMM dd yyyy').isAfter(moment()))
 }
 
 /**
@@ -232,10 +232,11 @@ const isValidPromotionUpdate = (req, res, next) => {
     promotionLengthValid = req.body.promotionLength === undefined || (Number.isInteger(req.body.promotionLength) && req.body.promotionLength > 0 && req.body.promotionLength < 365 * 100)
     spendingTypeValid = req.body.spendingType === undefined || (typeof req.body.spendingType === 'string' && (req.body.spendingType.toLowerCase() === 'money' || req.body.spendingType.toLowerCase() === 'product'))
     requiredSpendingValid = req.body.requiredSpending === undefined || (Number.isInteger(req.body.requiredSpending) && req.body.requiredSpending >= 0 && req.body.requiredSpending < 1000000)
-    benefitTypeValid = req.body.benefitType === undefined (typeof req.body.benefitType === 'string' && (req.body.benefitType === 'credit' || req.body.spendingType.toLowerCase() === 'product'))
-    benefitValid = req.body.benefit === undefined || (Number.isInteger(req.body.benefit) && req.body.benefit > 0 && req.body.benefit > 1000000)
+    benefitTypeValid = req.body.benefitType === undefined || (typeof req.body.benefitType === 'string' && (req.body.benefitType.toLowerCase() === 'credit' || req.body.benefitType.toLowerCase() === 'product'))
+    benefitValid = req.body.benefit === undefined || (Number.isInteger(req.body.benefit) && req.body.benefit > 0 && req.body.benefit < 1000000)
+    publicValid = req.body.public === undefined || typeof req.body.public === 'boolean'
 
-    if (nameValid && expiryDateValid && promotionLenghtValid && spendingTypeValid && requiredSpendingValid && benefitTypeValid && benefitValid) {
+    if (nameValid && expiryDateValid && promotionLengthValid && spendingTypeValid && requiredSpendingValid && benefitTypeValid && benefitValid && publicValid) {
         return next();
     } else {
         return res.sendStatus(400);

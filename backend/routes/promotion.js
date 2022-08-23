@@ -8,6 +8,8 @@ const router = express.Router();
 const authFunctions = require('../config/authFunctions');
 const validFunctions = require('../config/validFunctions');
 
+const Promotion = require('../models/Promotion');
+
 /**
  * Claim (GET) promotion
  * 
@@ -48,20 +50,51 @@ router.get('/', (req, res, next) => {
  * @param {Number} requiredSpending - amount required to spend
  * @param {String} benefitType - either spending 'credit' or purchasing 'product'
  * @param {Number} benefit - amount of benefit 
+ * @param {Boolean} public - whether or not public promotion
  * 
  * Authorized Users: Executives
  */
 router.post('/create', authFunctions.isExecutive, validFunctions.isValidPromotion, async (req, res, next) => {
-    res.sendStatus(200);
+    try {
+        const promotion = await Promotion.create({
+            creationDate: new Date(),
+            expiryDate: req.body.expiryDate,
+            promotionLength: req.body.promotionLength,
+            spendingType: req.body.spendingType,
+            benefitType: req.body.benefitType,
+            requiredSpending: req.body.requiredSpending,
+            benefit: req.body.benefit,
+            public: req.body.public
+        })
+
+        return res.sendStatus(200);
+    } catch (err) {
+        console.log(err);
+        return res.sendStatus(500);
+    }
 })
 
 /**
- * GET promotion(s)
+ * POST filter to retrieve promotion(s)
  * 
  * @param {Object} filter - filter of query
  * 
  * Authorized Users: All
  */
+router.post('/filter', validFunctions.isReqObjectStrict, (req, res, next) => {
+    if (req.body.filter === undefined) {
+        return res.sendStatus(400); 
+    }
+    if (!authFunctions.isManagerHelper(req, res, next)) {
+        req.body.filter.public = true;
+    }
+    Promotion.find(req.body.filter).exec().then(result => {
+        return res.status(200).json(result);
+    }).catch(err => {
+        console.log(err);
+        return res.sendStatus(500);
+    })
+})
 
 /**
  * PATCH promotion
